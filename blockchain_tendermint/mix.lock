@@ -1,3 +1,4 @@
 %{
-  "merkle_tree": {:hex, :merkle_tree, "1.1.1", "7722983eb439f8361138bcdcc51d3dff6fdf84088f2f6de5e86cabc662a5210d", [:mix], [], "hexpm"},
+  "abci_server": {:git, "https://github.com/KrzysiekJ/abci_server.git", "ee7e1674064899488e23e191064d4085ac2b11c9", [tag: "v0.4.0"]},
+  "merkle_tree": {:hex, :merkle_tree, "1.2.0", "ebad888c772dc5545e087859e90e9f0a554847552cb4a1affb2adf233a4326f7", [:mix], [], "hexpm"},
 }

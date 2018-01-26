@@ -14,5 +14,6 @@ defmodule BlockchainTendermint do
   """
   def hello do
     IO.puts("Hello, World!")
+    MerkleTree.__info__(:functions)
   end
 end
