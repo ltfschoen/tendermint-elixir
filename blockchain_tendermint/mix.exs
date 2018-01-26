@@ -21,7 +21,8 @@ defmodule BlockchainTendermint.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      # {:dep_from_hexpm, "~> 0.3.0"},
+      # ABCI Server (Erlang) https://github.com/yosriady/merkle_tree
+      {:merkle_tree, "~> 1.0.0", only: [:dev, :test, :prod]}
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"},
     ]
   end
