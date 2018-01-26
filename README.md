@@ -180,9 +180,29 @@ $ tendermint node --proxy_app=/var/run/abci.sock
     BlockchainTendermint.hello
     ```
 
-    * Experiment with Merkle Tree Library
+* ABCI Server (Merkle Tree Library)
+  * Module `MerkleTree` Example:
+    * Create a Merkle Tree (given a number of string Blocks, and optional Cryptographic Hash Function):
+      * Each non-leaf node is labelled with the hash of the labels or values (for leafs) of its child nodes
+      * Allows efficent and secure verification of the contents of large data structures
+      * Default Hash Function is `:sha256`
+      * API Docs Reference: https://hexdocs.pm/merkle_tree/MerkleTree.html#new/2
+    
       ```
-      iex(1)> f = MerkleTree.new ['a', 'b', 'c', 'd']
+      f = MerkleTree.new(['a', 'b', 'c', 'd'], &MerkleTree.Crypto.sha256/1)
+      f.blocks()
+      f.hash_function()
+      f.root()
+      f.t()
+      ```
+
+  * Module `MerkleTree.Proof` Example:
+    * Generate and Verify Merkle Proofs
+
+
+      
+      ```
+      iex(1)> f = MerkleTree.new(['a', 'b', 'c', 'd'], &MerkleTree.Crypto.sha256/1)
       
       %MerkleTree{
         blocks: ['a', 'b', 'c', 'd'],
@@ -229,6 +249,8 @@ $ tendermint node --proxy_app=/var/run/abci.sock
 # Open Source Contributions
 
 * Pull Request created to Merkle Tree Library to remove warnings when imported into IEx - https://github.com/yosriady/merkle_tree/pull/8
+
+* Issue created to Merkle Tree Library since unable to use Merkle Tree Proof - https://github.com/yosriady/merkle_tree/issues/9
 
 # Other Notes
 
