@@ -4,7 +4,7 @@ defmodule BlockchainTendermint do
   """
 
   @doc """
-  Hello world.
+  Outputs's `Hello world` everytime.
 
   ## Examples
 
@@ -13,6 +13,6 @@ defmodule BlockchainTendermint do
 
   """
   def hello do
-    :world
+    IO.puts("Hello, World!")
   end
 end

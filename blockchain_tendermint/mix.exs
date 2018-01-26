@@ -22,6 +22,7 @@ defmodule BlockchainTendermint.MixProject do
   defp deps do
     [
       # ABCI Server (Erlang) https://github.com/yosriady/merkle_tree
+      # http://tendermint.readthedocs.io/projects/tools/en/master/ecosystem.html?highlight=server#abci-servers
       {:merkle_tree, "~> 1.0.0", only: [:dev, :test, :prod]}
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"},
     ]

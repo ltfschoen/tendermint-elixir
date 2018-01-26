@@ -152,8 +152,6 @@ $ tendermint node --proxy_app=/var/run/abci.sock
       ```bash
       curl -s localhost:46657/status
       ```
-    
-
 
   * Deployment
     * TODO 
@@ -161,13 +159,52 @@ $ tendermint node --proxy_app=/var/run/abci.sock
 
 # Tendermint App
 
-* Run Tendermint Core (blockchain engine) & Custom Application - https://tendermint.readthedocs.io/en/master/getting-started.html#install
+  * Run Tendermint Core (blockchain engine) & Custom Application - https://tendermint.readthedocs.io/en/master/getting-started.html#install
+
+# Elixir App
+
+  * Change into App Directory
+    ```
+    cd blockchain
+    ```
+
+  * Fetch Dependencies defined in mix.exs
+    ```
+    mix deps.get
+    ```
+
+  * Interactively Elixir (REPL) within context of Elixir App (loading app and dependencies into IEx runtime)
+    ```
+    iex -S mix
+    c("lib/blockchain_tendermint.ex")
+    BlockchainTendermint.hello
+    ```
+
+  * Compile Mix Project into _build/ Directory
+    ```
+    MIX_ENV=dev mix compile
+    ```
+  
+
+# Other Notes
+
+If [available in Hex](https://hex.pm/docs/publish), the package can be installed
+by adding `blockchain_tendermint` to your list of dependencies in `mix.exs`:
+
+```elixir
+def deps do
+  [
+    {:blockchain_tendermint, "~> 0.1.0"}
+  ]
+end
+```
+
+Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
+and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
+be found at [https://hexdocs.pm/blockchain_tendermint](https://hexdocs.pm/blockchain_tendermint).
 
 
-
-
-
-# About
+# About Tendermint
 
 * Tendermint
 
