@@ -181,8 +181,16 @@ $ tendermint node --proxy_app=/var/run/abci.sock
     ```
     iex -S mix
     c("lib/blockchain_tendermint.ex")
-    BlockchainTendermint.hello
+    BlockchainTendermint.start_server
+    BlockchainTendermint.stop_server
+    BlockchainTendermint.Foo.bar
     ```
+
+  * NOT WORKING - Send Request to ABCI Server endpoint
+    ```
+    curl -s 'localhost:46658/bar'
+    ```
+
 
 * Merkle Tree Library
   * Module `MerkleTree` Example:
@@ -216,6 +224,12 @@ $ tendermint node --proxy_app=/var/run/abci.sock
 * ABCI Server (Erlang)
   * Installation with Mix
 
+    * Upgrade to GNU Make 4 or later (macOS pre-installed with GNU Make 3) https://erlang.mk/guide/installation.html
+      ```bash
+      brew install erlang git;
+      brew install make --with-default-names;
+      ```
+
     * Add ABCI Server (Erlang) to mix.exs. [Choose a Release Tag](https://github.com/KrzysiekJ/abci_server/tags) 
       ```elixir
       defp deps do
@@ -237,6 +251,70 @@ $ tendermint node --proxy_app=/var/run/abci.sock
       cd deps/abci_server/ && make docs && open doc/index.html && cd ../../
       ```
 
+    * Review Example Application built with ABCI Server - https://github.com/KrzysiekJ/abci_counter
+
+
+    * Run IEx
+      ```
+      iex -S mix
+      ```
+    
+    * Experiment with ABCI Server in IEx. Load Erlang Library into Elixir - https://elixirschool.com/en/lessons/advanced/erlang/
+      * Important Note: `__info__/1` is an Elixir thing the compiler adds, you probably want `module_info/1` which is the erlang equivalent - https://elixir-lang.slack.com/archives/C03EPRA3B/p1517018221000028
+
+      * Show ABCI Server Module Information, Start ABCI Server, Stop ABCI Server
+        ```elixir
+        iex> :abci_server.module_info  
+        [
+          module: :abci_server,
+          exports: [
+            start_link: 4,
+            start_listener: 2,
+            child_spec: 2,
+            stop_listener: 1,
+            init: 1,
+            handle_call: 3,
+            handle_cast: 2,
+            handle_info: 2,
+            terminate: 2,
+            code_change: 3,
+            module_info: 0,
+            module_info: 1
+          ],
+          attributes: [
+            vsn: [86973587470476204871336807197797490126],
+            behaviour: [:gen_server],
+            behaviour: [:ranch_protocol]
+          ],
+          compile: [
+            options: [
+              :debug_info,
+              {:i,
+              '/Users/Ls/code/blockchain/tendermint-elixir/blockchain_tendermint/deps/abci_server/include'},
+              :warn_obsolete_guard,
+              :warn_shadow_vars,
+              :warn_export_vars
+            ],
+            version: '7.1.4',
+            source: '/Users/Ls/code/blockchain/tendermint-elixir/blockchain_tendermint/deps/abci_server/src/abci_server.erl'
+          ],
+          native: false,
+          md5: <<65, 110, 128, 239, 19, 146, 215, 5, 182, 173, 33, 116, 159, 63, 157,
+            206>>
+        ]
+
+        iex>  defmodule Foo do             
+                def bar() do               
+                  IO.puts("Hello, World!") 
+                end
+              end
+
+        iex> {ok, _} = :abci_server.start_listener(Foo, 46658)
+        {:ok, #PID<0.181.0>}
+
+        iex> ok = :abci_server.stop_listener(Foo)             
+        :ok
+        ```
 
 # Open Source Contributions
 
@@ -246,6 +324,50 @@ $ tendermint node --proxy_app=/var/run/abci.sock
 
 * ABCI Server
   * Pull Request - https://github.com/KrzysiekJ/abci_server/pull/3
+  * Issues:
+    * https://github.com/KrzysiekJ/abci_server/issues/4
+    * https://github.com/KrzysiekJ/abci_server/issues/5
+
+# Questions
+
+* ABCI Server 
+  * Elixir Slack 
+    * https://elixir-lang.slack.com/archives/C03EPRA3B/p1517016786000068
+
+# Troubleshooting
+
+* Problem: `erlang.mk:26: Please upgrade to GNU Make 4 or later: https://erlang.mk/guide/installation.html`
+  * Solution:
+    * Check Make and GMake installation directories
+      ```
+      $ which -a make;
+      /usr/bin/make
+      $ which -a gmake;
+      /usr/local/bin/gmake
+      ```
+
+    * Add to Bash Profile
+      ```
+      export PATH="/usr/local/bin/make:$PATH"
+      export PATH="/usr/local/opt/make/libexec/gnubin:$PATH"
+      ```
+    * Reset Bash Profile
+      ```
+      source ~/.bash_profile
+      ```
+    * Create Symlink between version of GNU Make 4 in PATH and where it is installed (instead of default macOS GNU Make 3)
+      ```
+      ln -s /usr/local/bin/gmake /usr/local/bin/make
+      ```
+    * Check PATH of Make has changed
+      ```
+      $ which make
+      /usr/local/bin/make
+      ```
+
+* Problem: `** (Mix) Could not start application ranch: could not find application file: ranch.app`
+  * See Issue raised https://github.com/KrzysiekJ/abci_server/issues/4
+
 
 # Other Notes
 
@@ -268,6 +390,8 @@ be found at [https://hexdocs.pm/blockchain_tendermint](https://hexdocs.pm/blockc
 # About Tendermint
 
 * Tendermint
+
+  * Background - https://blockchainhub.net/blog/blog/scaling-ethereum-2/
 
   * Diagrams
     * Tendermint in a (technical) nutshell - https://github.com/devcorn/hackatom/blob/master/tminfo.pdf
@@ -544,6 +668,9 @@ be found at [https://hexdocs.pm/blockchain_tendermint](https://hexdocs.pm/blockc
       * https://cosmos.network/about/whitepaper
       * https://cosmos.network/about/faq
     * TODO - Merkle Tree Proof Calculation and Checking - https://github.com/yosriady/merkle_tree
+
+* Erlang 
+  * TODO - Erlang Standard Library - http://erlang.org/doc/apps/stdlib/index.html
 
 * Scrap Notes:
 

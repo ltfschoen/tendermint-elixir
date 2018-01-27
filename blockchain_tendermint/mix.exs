@@ -27,7 +27,12 @@ defmodule BlockchainTendermint.MixProject do
       {:merkle_tree, "~> 1.2.0", only: [:dev, :test, :prod]},
       # ABCI Server (Erlang) - https://github.com/KrzysiekJ/abci_server
       # List of ABCI Servers - http://tendermint.readthedocs.io/projects/tools/en/master/ecosystem.html?highlight=server#abci-servers
-      {:abci_server, git: "https://github.com/KrzysiekJ/abci_server.git", tag: "v0.4.0"}
+      {:abci_server, git: "https://github.com/KrzysiekJ/abci_server.git", tag: "v0.4.0"},
+      # Ranch is a dependency of ABCI Server (Erlang), which is using the older 
+      # version of Ranch 1.3.2, which does not support the latest GNU Make 4
+      # Temporarily install Ranch 1.4.0 here until Pull Request https://github.com/KrzysiekJ/abci_server/pull/3
+      # is approved and newer version of abci_server is released that uses the latest Ranch version 
+      {:ranch, git: "https://github.com/ninenines/ranch.git", tag: "1.4.0"}
     ]
   end
 end
