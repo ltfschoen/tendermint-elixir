@@ -24,7 +24,7 @@ defmodule BlockchainTendermint.MixProject do
     [
       # Merkle Tree https://github.com/yosriady/merkle_tree
       # API Docs - Merkle Tree - https://hexdocs.pm/merkle_tree/api-reference.html
-      {:merkle_tree, "~> 1.2.0", only: [:dev, :test, :prod]},
+      {:merkle_tree, "~> 1.2.1", only: [:dev, :test, :prod]},
       # ABCI Server (Erlang) - https://github.com/KrzysiekJ/abci_server
       # List of ABCI Servers - http://tendermint.readthedocs.io/projects/tools/en/master/ecosystem.html?highlight=server#abci-servers
       {:abci_server, git: "https://github.com/KrzysiekJ/abci_server.git", tag: "v0.4.0"},

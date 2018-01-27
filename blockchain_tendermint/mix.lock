@@ -1,5 +1,5 @@
 %{
   "abci_server": {:git, "https://github.com/KrzysiekJ/abci_server.git", "ee7e1674064899488e23e191064d4085ac2b11c9", [tag: "v0.4.0"]},
-  "merkle_tree": {:hex, :merkle_tree, "1.2.0", "ebad888c772dc5545e087859e90e9f0a554847552cb4a1affb2adf233a4326f7", [:mix], [], "hexpm"},
+  "merkle_tree": {:hex, :merkle_tree, "1.2.1", "815c309db63bc4607f30a36ddbdcefb6eb1b636f1f4fbd11a1b8a566b65eab6d", [:mix], [], "hexpm"},
   "ranch": {:git, "https://github.com/ninenines/ranch.git", "55c2a9d623454f372a15e99721a37093d8773b48", [tag: "1.4.0"]},
 }
