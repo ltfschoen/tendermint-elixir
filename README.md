@@ -1,13 +1,71 @@
-# Setup
 
-* macOS
+---
+TENDERMINT-ELIXIR
+---
 
-  * Install Elixir - https://elixir-lang.org/install.html
+# Table of Contents
+  * [Purpose](#chapter-0)
+  * [Goals](#chapter-1)
+  * [Installation (of Elixir and Tendermint)](#chapter-2)
+  * [Initialise and Configure Tendermint](#chapter-3)
+  * [Install ABCI-CLI (using Go)](#chapter-3.5)
+  * [Setup and Run Elixir ABCI Application and ABCI Server (in IEx REPL)](#chapter-4)
+  * [Run Tendermint (Multiple Testnet Nodes)](#chapter-5)
+  * [Experimentation with cURL Requests to ABCI Server (Erlang)](#chapter-6)
+  * [Experimentation with ABCI-CLI](#chapter-7)
+  * [Experimentation with Tendermint (Single Node)](#chapter-8)
+  * [Experimentation with ABCI Server (Erlang) Library (in IEx REPL)](#chapter-9)
+  * [Experimentation with Merkle Tree Elixir Library (in IEx REPL)](#chapter-10)
+  * [Open Source Contributions and Community Questions](#chapter-11)
+  * [Troubleshooting and FAQ](#chapter-12)
+  * [About Tendermint](#chapter-13)
+  * [References](#chapter-14)
+  * [Unsorted Notes](#chapter-15)
 
-```
-brew install elixir;
-elixir --version
-```
+## Purpose <a id="chapter-0"></a>
+
+* Write an Elixir Application that uses the Tendermint Core (Blockchain Engine) 
+
+## Goals <a id="chapter-1"></a>
+
+* [X] Install Tendermint Core (BFT Consensus) in Go `tendermint --help`
+* [X] Install Tendermint ABCI-CLI `abci-cli --help`
+* [X] Create Boilerplate Elixir Tendermint Application
+* [X] Load [Merkle Tree Elixir Library](https://github.com/yosriady/merkle_tree) with [Mix](https://elixirschool.com/en/lessons/basics/mix/) into Elixir Tendermint Application
+* [X] Load [Tendermint ABCI Server (Erlang)](https://github.com/KrzysiekJ/abci_server) with Mix into Elixir Tendermint Application 
+* [X] Run Elixir Tendermint Application (optionally using Interactive Elixir (IEx))
+  * [X] Start the Tendermint ABCI Server (Erlang)
+  * [X] Stop the Tendermint ABCI Server (Erlang)
+* [X] Create Shell Script to generate Tendermint Testnet with four (4) Nodes `bash launch_testnet_nodes.sh`
+* [ ] Write Elixir Tendermint Application that implements the Tendermint ABCI (Application BlockChain Interface. Handle Byzantine Fault Tolerance (BFT) replication of the following State:
+  * [ ] Root Hash `root_hash` is Pre-Agreed at Genesis and is Generated from the Merkle-Hash of an Array of Whitelisted Participants Addresses 
+    * `whitelisted = ["a", "b", "c", "d"]`
+  * [ ] Verification of the passing the "Ball" Transaction
+    * [ ] Simulate the Act of passing a "Ball" around with a Transaction comprising `from`, `to`, `to_index`, `proof` fields
+    * [ ] Verify before passing the "Ball" around using a succinct Merkle Proof Calculation that the Sender of the "Ball" in the `from` field of the Transaction actually held the "Ball" and is a Whitelisted Participants
+    * [ ] Verify before passing the "Ball" around using a succinct Merkle Proof Calculation that the Recipient of the "Ball" in the `to` field of the Transaction is actually a Whitelisted Participant
+    * [ ] Verify before passing the "Ball" around using a succinct Merkle Proof Calculation that the Recipient of the "Ball" is at the Address of the `to_index` field of the Transaction and is proven by the `proof` field of the Transaction, which is a List of Hashes
+    * [ ] Verify using a succinct Merkle Proof Calculation that only a Single Whitelisted Participant is holding the "Ball" at a time
+  * [ ] Verify using a succinct Merkle Proof Calculation that the Recipient of the "Ball" is the Whitelisted Participant of the `to` field in the Transaction only after successful Validation of the passing the "Ball" Transaction
+  * [ ] Verify that only the Merke Tree Erlang Library is implemented to perform succinct Merkle Proof Calculations to demonstrate State-Replication https://github.com/yosriady/merkle_tree#usage
+    * [ ] Verify that State-Replication of the Whitelisted Participant Addressses (`whitelisted`) is only performed on the Merkle Tree `root_hash` and not verbosely
+  * [ ] Write Functions to handle calls for `CheckTx` and `DeliverTx` in Elixir
+  * [ ] Write Stubs for Tendermint Commits, Inits, BeginBlocks, EndBlocks, and Infos if necessary
+  * [ ] Generate Documentation with [ExDoc](https://github.com/elixir-lang/ex_doc) and published on [HexDocs](https://hexdocs.pm)
+  * [ ] Release on Github with ZIP file
+  * [ ] Publish on [Hex](https://hex.pm/docs/publish)
+
+# Installation (of Elixir and Tendermint)<a id="chapter-2"></a>
+
+## Install Elixir
+
+* Install Elixir - https://elixir-lang.org/install.html
+  ```bash
+  brew install elixir;
+  elixir --version
+  ```
+
+## Install Tendermint 
 
 * Tendermint
   * Install Tendermint v0.15.0 - https://github.com/tendermint/tendermint/wiki/Installation
@@ -19,448 +77,472 @@ elixir --version
     * Add GoLang to $PATH
     * Note: Attempted to use Docker by encountered `shopt` error, as shown in Dockerfile
 
-  ```
+  ```bash
   go get --help
   go get -u -v github.com/tendermint/tendermint/cmd/tendermint
+  tendermint --help
   ```
 
-  * Run Tendermint
+# Initialise and Configure Tendermint <a id="chapter-3"></a>
 
-    * Initialise
+## Initialise Tendermint
+  ```bash
+  tendermint init
+  ```
 
-```bash
-tendermint init
-```
+## Configure Tendermint
 
-  * View Tendermint Directory Root 
+* View Tendermint Directory Root 
+  ```bash
+  $ ls  ~/.tendermint
 
-```bash
-$ ls  ~/.tendermint
+  config.toml
+  data
+  genesis.json
+  priv_validator.json
+  ```  
 
-config.toml
-data
-genesis.json
-priv_validator.json
-```  
+* View TOML Configuration File
+  ```bash
+  $ cat ~/.tendermint/config.toml
+  # This is a TOML config file.
+  # For more information, see https://github.com/toml-lang/toml
 
-  * View TOML Configuration File
+  proxy_app = "tcp://127.0.0.1:46658"
+  moniker = "<MY_NETWORK_NAME>.local"
+  fast_sync = true
+  db_backend = "leveldb"
+  log_level = "state:info,*:error"
 
-```bash
-$ cat ~/.tendermint/config.toml
-# This is a TOML config file.
-# For more information, see https://github.com/toml-lang/toml
+  [rpc]
+  laddr = "tcp://0.0.0.0:46657"
 
-proxy_app = "tcp://127.0.0.1:46658"
-moniker = "<MY_NETWORK_NAME>.local"
-fast_sync = true
-db_backend = "leveldb"
-log_level = "state:info,*:error"
+  [p2p]
+  laddr = "tcp://0.0.0.0:46656"
+  seeds = ""
+  ```
 
-[rpc]
-laddr = "tcp://0.0.0.0:46657"
+* View New Private Key from initialising Tendermint
+  ```bash
+  $ cat ~/.tendermint/priv_validator.json | python -m json.tool
+  {
+      "address": "E472...",
+      "last_height": 18,
+      "last_round": 0,
+      "last_signature": {
+          "type": "ed25519",
+          "data": "B755..."
+      },
+      "last_signbytes": "7B22...",
+      "last_step": 3,
+      "priv_key": {
+          "type": "ed25519",
+          "data": "D11C..."
+      },
+      "pub_key": {
+          "type": "ed25519",
+          "data": "8373..."
+      }
+  }
+  ```
 
-[p2p]
-laddr = "tcp://0.0.0.0:46656"
-seeds = ""
-```
+* View Genesis File containing Public Key 
+  ```bash
+  $ cat ~/.tendermint/genesis.json | python -m json.tool
+  {
+      "app_hash": "",
+      "chain_id": "test-chain-gZoesi",
+      "genesis_time": "0001-01-01T00:00:00Z",
+      "validators": [
+          {
+              "pub_key": {
+                  "type": "ed25519",
+                  "data": "8373..."
+              },
+              "power": 10,
+              "name": ""
+          }
+      ]
+  }
+  ```
 
-  * View New Private Key from initialising Tendermint
+# Install ABCI-CLI (using Go) <a id="chapter-3.5"></a>
 
-```bash
-$ cat ~/.tendermint/priv_validator.json | python -m json.tool
-{
-    "address": "E472...",
-    "last_height": 18,
-    "last_round": 0,
-    "last_signature": {
-        "type": "ed25519",
-        "data": "B755..."
-    },
-    "last_signbytes": "7B22...",
-    "last_step": 3,
-    "priv_key": {
-        "type": "ed25519",
-        "data": "D11C..."
-    },
-    "pub_key": {
-        "type": "ed25519",
-        "data": "8373..."
-    }
-}
-```
+* Install ABCI-CLI with Go (includes example Dummy and Counter Apps) - https://tendermint.readthedocs.io/en/master/getting-started.html#dummy-a-first-example
+  ```bash
+  go get -u github.com/tendermint/abci/cmd/abci-cli;
+  abci-cli --help
+  ```
 
-  * View Genesis File containing Public Key 
+# Run Tendermint (Single Tendermint Node) with Example ABCI Applications <a id="chapter-4"></a>
 
-```bash
-$ cat ~/.tendermint/genesis.json | python -m json.tool
-{
-    "app_hash": "",
-    "chain_id": "test-chain-gZoesi",
-    "genesis_time": "0001-01-01T00:00:00Z",
-    "validators": [
-        {
-            "pub_key": {
-                "type": "ed25519",
-                "data": "8373..."
-            },
-            "power": 10,
-            "name": ""
-        }
+## Run Tendermint (Single Tendermint Node) with Example ABCI Applications (i.e. "Dummy" (GoLang))
+
+* Start Tendermint Single-Node Blockchain and Compile in-progress ABCI Application written in GoLang (i.e. Dummy App https://github.com/tendermint/abci)
+  ```bash
+  $ tendermint node --proxy_app=dummy
+
+  I[01-22|21:35:03.283] Executed block                               module=state height=1 validTxs=0 invalidTxs=0
+  I[01-22|21:35:03.283] Committed state                              module=state height=1 txs=0 appHash=
+  I[01-22|21:35:04.295] Executed block                               module=state height=2 validTxs=0 invalidTxs=0
+  I[01-22|21:35:04.295] Committed state                              module=state height=2 txs=0 appHash=
+  ```
+
+* Review Example Application built with ABCI Server - https://github.com/KrzysiekJ/abci_counter
+
+# Setup and Run Elixir ABCI Application and ABCI Server (Erlang) (in IEx REPL) <a id="chapter-5"></a>
+
+## Update GNU Make
+
+* Upgrade to GNU Make 4 or later (macOS pre-installed with GNU Make 3) https://erlang.mk/guide/installation.html
+  ```bash
+  brew install erlang git;
+  brew install make --with-default-names;
+  ```
+
+## Switch Directory (to the Elixir ABCI Application)
+
+* Change into App Directory.
+  ```bash
+  cd blockchain_tendermint;
+  ```
+
+## Configure Mix Dependencies. Add ABCI Server (Erlang) (to the Elixir ABCI Application)
+
+* Add ABCI Server (Erlang) to mix.exs. [Choose a Release Tag](https://github.com/KrzysiekJ/abci_server/tags) 
+  ```elixir
+  defp deps do
+    [
+      # ABCI Server (Erlang) - https://github.com/KrzysiekJ/abci_server
+      # Tendermint List of ABCI Servers - http://tendermint.readthedocs.io/projects/tools/en/master/ecosystem.html?highlight=server#abci-servers
+      {:abci_server, git: "https://github.com/KrzysiekJ/abci_server.git", tag: "v0.4.0"}
     ]
-}
-```
+  end
+  ```
 
-  * Start Tendermint Single-Node Blockchain and Compile in-progress ABCI Application written in GoLang (i.e. Dummy App https://github.com/tendermint/abci)
+## Install Mix Dependencies (for the Elixir ABCI Application)
 
-```bash
-$ tendermint node --proxy_app=dummy
+* Fetch Mix Dependencies defined in mix.exs
+  ```bash
+  mix deps.get
+  ```
 
-I[01-22|21:35:03.283] Executed block                               module=state height=1 validTxs=0 invalidTxs=0
-I[01-22|21:35:03.283] Committed state                              module=state height=1 txs=0 appHash=
-I[01-22|21:35:04.295] Executed block                               module=state height=2 validTxs=0 invalidTxs=0
-I[01-22|21:35:04.295] Committed state                              module=state height=2 txs=0 appHash=
-```
+## Show Documentation for ABCI Server (Erlang)
 
-  * Start Tendermint Single-Node Blockchain and Connect to and Compile a Non-GoLang ABCI App in-progress
-    * Run App in another Socket Process
+* Documentation Generation. Open Documentation in Web Browser
+  ```bash
+  cd deps/abci_server/ && make docs && open doc/index.html && cd ../../
+  ```
 
-    * Start Tendermint Single-Node Blockchain and use Proxy Flag to specify Address of Socket the ABCI App is listening on
+## Compile Elixir ABCI Application with Mix
 
-```bash
-$ tendermint node --proxy_app=/var/run/abci.sock
-```
+* Compile Mix Project into _build/ Directory
+  ```bash
+  MIX_ENV=dev mix compile
+  ```
 
-  * Install ABCI-CLI with Go (includes example Dummy and Counter Apps) - https://tendermint.readthedocs.io/en/master/getting-started.html#dummy-a-first-example
-   
-    * Terminal 1
+## Run Elixir ABCI Application in Interactive Elixir (IEx) REPL
 
-      ```bash
-      go get -u github.com/tendermint/abci/cmd/abci-cli;
-      abci-cli --help
-      ```
+* Interactively Elixir (REPL) within context of Elixir App and dependencies injected into IEx runtime)
+  ```bash
+  iex -S mix
+  ```
 
-    * Terminal 2 - Initialise, Reset, and Start Tendermint Node
+  ```elixir
+  c("lib/blockchain_tendermint.ex")
+  BlockchainTendermint.start_server
+  BlockchainTendermint.stop_server
+  ```
 
-      ```bash
-      tendermint init;
-      tendermint unsafe_reset_all;
-      tendermint node
-      ```
+# Run Tendermint (Multiple Testnet Nodes) <a id="chapter-5"></a>
+
+* Launch Testnet Nodes (4 OFF) (in separate Terminal Tabs using Shell Script)
+  ```bash
+  $ bash launch_testnet_nodes.sh
+  Tendermint Testnet Location: /Users/Ls/code/blockchain/tendermint-elixir/mytestnet
+  Loading Nodes: mach0, mach1, mach2, mach3
+  Loading Seeds: 0.0.0.0:46656,0.0.0.0:46666,0.0.0.0:46676,0.0.0.0:46686
+  Successfully initialized 4 node directories
+  ```
+
+* Optional Alternative Deployment 
+  * Kubernetes - https://github.com/tendermint/tools/tree/master/mintnet-kubernetes
+    * **TODO**
+
+# Experimentation with cURL Requests to ABCI Server (Erlang) <a id="chapter-6"></a>
+
+**UNRESOLVED**
+
+* Show all available API endpoints by going to http://localhost:46657/
+
+* Send Request to ABCI Server endpoint
+  ```
+  curl -s 'localhost:46658/status'
+  ```
+
+# Experimentation with ABCI-CLI <a id="chapter-7"></a>
+
+**UNRESOLVED**
+
+* Experiment with ABCI-CLI (from separate Bash Terminal Tab after starting ABCI Server in IEx)
+  * CheckTx
+    ```bash
+    abci-cli check_tx "0x00" --address tcp://localhost:46658 --abci "socket" --log_level "debug" --verbose
+    ```
+
+  * Echo
+    ```bash
+    abci-cli echo "Hello" --address tcp://localhost:46658 --abci "socket" --log_level "debug" --verbose
+    ```
+
+  * DeliverTx
+    ```bash
+    abci-cli deliver_tx "0x00" --address tcp://localhost:46658 --abci "socket" --log_level "debug" --verbose
+    ```
+
+  * Query
+    ```bash
+    abci-cli query "0x00" --address tcp://localhost:46658 --abci "socket" --log_level "debug" --verbose
+    ```
+
+# Experimentation with Tendermint (Single Node) <a id="chapter-8"></a>
+
+* Run Tendermint Core (blockchain engine) Node
+  ```bash
+  tendermint init;
+  tendermint unsafe_reset_all;
+  tendermint node --help;
+  tendermint node \
+    --abci "socket" \
+    --consensus.create_empty_blocks true \
+    --fast_sync true \
+    --moniker "LS.local" \
+    --p2p.laddr "tcp://0.0.0.0:46656" \
+    --p2p.pex true \
+    --p2p.seeds "tcp://127.0.0.1:46656, tcp://127.0.0.1:46666, tcp://127.0.0.1:46676, tcp://127.0.0.1:46686" \
+    --p2p.skip_upnp false \
+    --proxy_app "tcp://127.0.0.1:46658" \
+    --rpc.laddr "tcp://0.0.0.0:46657" \
+    --rpc.unsafe true \
+    --home "/Users/Ls/.tendermint" \
+    --log_level "state:info,*:error" \
+    --trace true
+  ```
+
+# Experimentation with ABCI Server (Erlang) Library (in IEx REPL) <a id="chapter-9"></a>
+
+* Run IEx
+  ```bash
+  iex -S mix
+  ```
     
-    * Terminal 1 - Start ABCI Server of ABCI App
+## Experiment with ABCI Server in IEx
 
-    * Terminal 1 - Show all available API endpoints by going to http://localhost:46657/
+* Reference: Loading an Erlang Library into Elixir - https://elixirschool.com/en/lessons/advanced/erlang/
 
-    * Terminal 1 - Interact with Blockchain and ABCI App
+* Important Note: `__info__/1` is an Elixir thing the compiler adds, you probably want `module_info/1` which is the erlang equivalent - https://elixir-lang.slack.com/archives/C03EPRA3B/p1517018221000028
 
-      ```bash
-      curl -s localhost:46657/status
-      ```
+* Show ABCI Server Module Information. Start ABCI Server. Stop ABCI Server
+  ```elixir
+  iex> :abci_server.module_info  
+  [
+    module: :abci_server,
+    exports: [
+      start_link: 4,
+      start_listener: 2,
+      child_spec: 2,
+      stop_listener: 1,
+      init: 1,
+      handle_call: 3,
+      handle_cast: 2,
+      handle_info: 2,
+      terminate: 2,
+      code_change: 3,
+      module_info: 0,
+      module_info: 1
+    ],
+    attributes: [
+      vsn: [86973587470476204871336807197797490126],
+      behaviour: [:gen_server],
+      behaviour: [:ranch_protocol]
+    ],
+    compile: [
+      options: [
+        :debug_info,
+        {:i,
+        '/Users/Ls/code/blockchain/tendermint-elixir/blockchain_tendermint/deps/abci_server/include'},
+        :warn_obsolete_guard,
+        :warn_shadow_vars,
+        :warn_export_vars
+      ],
+      version: '7.1.4',
+      source: '/Users/Ls/code/blockchain/tendermint-elixir/blockchain_tendermint/deps/abci_server/src/abci_server.erl'
+    ],
+    native: false,
+    md5: <<65, 110, ..., 206>>
+  ]
 
-  * Deployment
-    * TODO 
-      * Kubernetes - https://github.com/tendermint/tools/tree/master/mintnet-kubernetes
+  iex>  defmodule Foo do             
+          def bar() do               
+            IO.puts("Hello, World!") 
+          end
+        end
 
-# Tendermint App
+  iex> {ok, _} = :abci_server.start_listener(Foo, 46658)
+  {:ok, #PID<0.181.0>}
+  ```
 
-  * Run Tendermint Core (blockchain engine) & Custom Application - https://tendermint.readthedocs.io/en/master/getting-started.html#install
+* Integration Tests run against the ABCI Server (Erlang) (separate Bash Terminal Tab) https://github.com/tendermint/abci#tools
+  ```bash
+  abci-cli test
+  ```
 
-# Elixir App
-
-  * Change into App Directory
+  * View Output (in the Bash Terminal Tab running IEx)
+    ```elixir
+    iex> 
+    14:27:53.961 [error] GenServer #PID<0.242.0> terminating
+    ** (UndefinedFunctionError) function Foo.handle_request/1 is undefined (module Foo is not available)
+        Foo.handle_request(
+          { 
+            :RequestInitChain, 
+            [ 
+              { :Validator, <<1, 229, ..., 36>>, 1647107211121726315 }, 
+              { :Validator, <<1, 243, ..., 78>>, 8186817011543816184 }, 
+              { :Validator, <<1, 102, ..., 16>>, 7982159435569315414 }, 
+              { :Validator, <<1, 135, ..., 64>>, 2846252370576207682 }, 
+              { :Validator, <<1, 241,..., 159>>, 637770835807807961 }, 
+              { :Validator, <<1, 16, ..., 76>>, 4097788002864909056 }, 
+              { :Validator, <<1, 152, ..., 70>>, 8116718250853054711 }, 
+              { :Validator, <<1, 19, ..., 246>>, 3891949616163017026 }, 
+              { :Validator, <<1, 179, ..., 254>>, 7045591847215797995 }, 
+              { :Validator, <<1, 189, ..., 80>>, 4226073179895220771 }
+            ]
+          }
+        )
+        (abci_server) src/abci_server.erl:117: :abci_server.handle_requests/2
+        (abci_server) src/abci_server.erl:83: :abci_server.handle_info/2
+        (stdlib) gen_server.erl:616: :gen_server.try_dispatch/4
+        (stdlib) gen_server.erl:686: :gen_server.handle_msg/6
+        (stdlib) proc_lib.erl:247: :proc_lib.init_p_do_apply/3
+    Last message: { :tcp, #Port<0.5297>, <<2, 1, ..., 148, ...>> }
+    State:        { :state, #Port<0.5297>, :ranch_tcp, "", Foo}
+    
+    14:27:53.965 [error] Ranch listener Foo had connection process started with :abci_server:start_link/4 at #PID<0.242.0> exit with reason: 
+    { :undef, 
+      [ 
+        { 
+          Foo, 
+          :handle_request, [ 
+            RequestInitChain: [ 
+              { :Validator, <<1, 229, ..., 36>>, 1647107211121726315 }, 
+              { :Validator, <<1, 189, ..., 112, ...>>, 4226073179895220771 }
+            ]
+          ], 
+          []
+        }, 
+        { 
+          :abci_server, 
+          :handle_requests, 
+          2, 
+          [file: 'src/abci_server.erl', line: 117]
+        }, 
+        {
+          :abci_server, 
+          :handle_info, 
+          2, 
+          [file: 'src/abci_server.erl', line: 83]
+        }, 
+        {
+          :gen_server, 
+          :try_dispatch, 
+          4,
+          [file: 'gen_server.erl', line: 616]
+        }, 
+        {
+          :gen_server, 
+          :handle_msg, 
+          6, 
+          [file: 'gen_server.erl', line: 686]
+        }, 
+        {
+          :proc_lib, 
+          :init_p_do_apply, 
+          3, 
+          [file: 'proc_lib.erl', line: 247]
+        }
+      ]
+    }
     ```
-    cd blockchain
-    ```
 
-  * Fetch Dependencies defined in mix.exs
-    ```
-    mix deps.get
-    ```
+* Update Elixir App to define `handle_request` Handle Request. Re-run the following in a separete Bash Terminal whilst ABCI Server (Erlang) is running and it will return `Passed test: InitChain`. 
+  * Reference: Sample ABCI Counter App https://github.com/KrzysiekJ/abci_counter/tree/master/src
+  ```bash
+  abci-cli test
+  ```
 
-  * Interactively Elixir (REPL) within context of Elixir App (loading app and dependencies into IEx runtime)
-    ```
-    iex -S mix
-    c("lib/blockchain_tendermint.ex")
-    BlockchainTendermint.start_server
-    BlockchainTendermint.stop_server
-    BlockchainTendermint.Foo.bar
-    ```
-
-  * NOT WORKING - Send Request to ABCI Server endpoint
-    ```
-    curl -s 'localhost:46658/bar'
-    ```
-
+# Experimentation with Merkle Tree Elixir Library (in IEx REPL) <a id="chapter-10"></a>
 
 * Merkle Tree Library
-  * Module `MerkleTree` Example:
+  * [MerkleTree Module Example](https://hexdocs.pm/merkle_tree/MerkleTree.html)
     * Create a Merkle Tree (given a number of string Blocks, and optional Cryptographic Hash Function):
       * Each non-leaf node is labelled with the hash of the labels or values (for leafs) of its child nodes
       * Allows efficent and secure verification of the contents of large data structures
       * Default Hash Function is `:sha256`
       * API Docs Reference: https://hexdocs.pm/merkle_tree/MerkleTree.html#new/2
-    
-      ```
-      f = MerkleTree.new(['a', 'b', 'c', 'd'], &MerkleTree.Crypto.sha256/1)
-      f.blocks()
-      f.hash_function()
-      f.root()
-      f.t()
-      ```
 
-  * Module `MerkleTree.Proof` Example:
+    ```elixir
+    iex> MerkleTree.__info__(:functions)
+    [__struct__: 0, __struct__: 1, build: 2, new: 1, new: 2]
+    iex> mt = MerkleTree.new ['a', 'b', 'c', 'd']
+    %MerkleTree{blocks: ['a', 'b', 'c', 'd'], hash_function: &MerkleTree.Crypto.sha256/1,
+          root: %MerkleTree.Node{children: [%MerkleTree.Node{children: [%MerkleTree.Node{children: [],
+              value: "ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb"},
+              %MerkleTree.Node{children: [], value: "3e23e8160039594a33894f6564e1b1348bbd7a0088d42c4acb73eeaed59c009d"}],
+            value: "62af5c3cb8da3e4f25061e829ebeea5c7513c54949115b1acc225930a90154da"},
+            %MerkleTree.Node{children: [%MerkleTree.Node{children: [], value: "2e7d2c03a9507ae265ecf5b5356885a53393a2029d241394997265a1a25aefc6"},
+              %MerkleTree.Node{children: [], value: "18ac3e7343f016890c510e93f935261169d9e3f565436429830faf0934f4f8e4"}],
+            value: "d3a0f1c792ccf7f1708d5422696263e35755a86917ea76ef9242bd4a8cf4891a"}],
+          value: "58c89d709329eb37285837b042ab6ff72c7c8f74de0446b091b6a0131c102cfd"}}
+    $ mt.blocks()
+    ['a', 'b', 'c', 'd'] 
+    $ mt.hash_function()
+    &MerkleTree.Crypto.sha256/1
+    $ mt.root()
+    ...
+    ```
+
+  * [MerkleTree.Proof Module Example](https://hexdocs.pm/merkle_tree/MerkleTree.Proof.html) (requires merkle_tree >1.2.0)
     * Generate and Verify Merkle Proofs
-      * API Docs Reference: https://hexdocs.pm/merkle_tree/MerkleTree.Proof.html
+    ```elixir
+    iex> MerkleTree.Proof.__info__(:functions)           
+    [__struct__: 0, __struct__: 1, prove: 2, proven?: 3]
+    iex> proof1 = MerkleTree.Proof.prove(mt, 1)
+    iex> proven1 = MerkleTree.Proof.proven?({"b", 1}, "58c89d709329eb37285837b042ab6ff72c7c8f74de0446b091b6a0131c102cfd", proof1)
+    true
 
-      ```
-      iex(1)> proof = MerkleTree.new(~w/a b c d/) |> MerkleTree.Proof.prove(1)
-      ```
-
-  * Compile Mix Project into _build/ Directory
+    iex> proof3 = MerkleTree.Proof.prove(mt, 3)                                              
+    %MerkleTree.Proof{          
+      hash_function: &MerkleTree.Crypto.sha256/1,
+      hashes: ["62af5c3cb8da3e4f25061e829ebeea5c7513c54949115b1acc225930a90154da",
+      "2e7d2c03a9507ae265ecf5b5356885a53393a2029d241394997265a1a25aefc6"]
+    }
+    iex> proven3 = MerkleTree.Proof.proven?({"d", 3}, "58c89d709329eb37285837b042ab6ff72c7c8f74de0446b091b6a0131c102cfd", proof3)
+    true
     ```
-    MIX_ENV=dev mix compile
+
+  * [MerkleTree.Crypto Module Example](https://hexdocs.pm/merkle_tree/MerkleTree.Crypto.html)
+    ```elixir
+    iex> MerkleTree.Crypto.__info__(:functions) 
+    [hash: 2, sha256: 1]
+    iex> MerkleTree.Crypto.hash("tendermint", :sha256) 
+  "f6c3848fc2ab9188dd2c563828019be7cee4e269f5438c19f5173f79898e9ee6"
+    iex> MerkleTree.Crypto.hash("tendermint", :md5)   
+  "bc93700bdf1d47ad28654ad93611941f"
+    iex> MerkleTree.Crypto.sha256("tendermint")    
+  "f6c3848fc2ab9188dd2c563828019be7cee4e269f5438c19f5173f79898e9ee6"
     ```
 
-* ABCI Server (Erlang)
-  * Installation with Mix
-
-    * Upgrade to GNU Make 4 or later (macOS pre-installed with GNU Make 3) https://erlang.mk/guide/installation.html
-      ```bash
-      brew install erlang git;
-      brew install make --with-default-names;
-      ```
-
-    * Add ABCI Server (Erlang) to mix.exs. [Choose a Release Tag](https://github.com/KrzysiekJ/abci_server/tags) 
-      ```elixir
-      defp deps do
-        [
-          # ABCI Server (Erlang) - https://github.com/KrzysiekJ/abci_server
-          # Tendermint List of ABCI Servers - http://tendermint.readthedocs.io/projects/tools/en/master/ecosystem.html?highlight=server#abci-servers
-          {:abci_server, git: "https://github.com/KrzysiekJ/abci_server.git", tag: "v0.4.0"}
-        ]
-      end
-      ```
-
-    * Install Mix Dependencies
-      ```bash
-      mix deps.get
-      ```
-
-    * Documentation Generation. Open Documentation in Web Browser
-      ```bash
-      cd deps/abci_server/ && make docs && open doc/index.html && cd ../../
-      ```
-
-    * Review Example Application built with ABCI Server - https://github.com/KrzysiekJ/abci_counter
-
-
-    * Run IEx
-      ```
-      iex -S mix
-      ```
-    
-    * Experiment with ABCI Server in IEx. Load Erlang Library into Elixir - https://elixirschool.com/en/lessons/advanced/erlang/
-      * Important Note: `__info__/1` is an Elixir thing the compiler adds, you probably want `module_info/1` which is the erlang equivalent - https://elixir-lang.slack.com/archives/C03EPRA3B/p1517018221000028
-
-      * Show ABCI Server Module Information, Start ABCI Server, Stop ABCI Server
-        ```elixir
-        iex> :abci_server.module_info  
-        [
-          module: :abci_server,
-          exports: [
-            start_link: 4,
-            start_listener: 2,
-            child_spec: 2,
-            stop_listener: 1,
-            init: 1,
-            handle_call: 3,
-            handle_cast: 2,
-            handle_info: 2,
-            terminate: 2,
-            code_change: 3,
-            module_info: 0,
-            module_info: 1
-          ],
-          attributes: [
-            vsn: [86973587470476204871336807197797490126],
-            behaviour: [:gen_server],
-            behaviour: [:ranch_protocol]
-          ],
-          compile: [
-            options: [
-              :debug_info,
-              {:i,
-              '/Users/Ls/code/blockchain/tendermint-elixir/blockchain_tendermint/deps/abci_server/include'},
-              :warn_obsolete_guard,
-              :warn_shadow_vars,
-              :warn_export_vars
-            ],
-            version: '7.1.4',
-            source: '/Users/Ls/code/blockchain/tendermint-elixir/blockchain_tendermint/deps/abci_server/src/abci_server.erl'
-          ],
-          native: false,
-          md5: <<65, 110, 128, 239, 19, 146, 215, 5, 182, 173, 33, 116, 159, 63, 157,
-            206>>
-        ]
-
-        iex>  defmodule Foo do             
-                def bar() do               
-                  IO.puts("Hello, World!") 
-                end
-              end
-
-        iex> {ok, _} = :abci_server.start_listener(Foo, 46658)
-        {:ok, #PID<0.181.0>}
-        ```
-
-      * Test the Running ABCI Server (Erlang) in separate Bash Terminal Tab - https://github.com/tendermint/abci#tools
-        ```
-        abci-cli test
-        ```
-
-      * View Output in the Bash Terminal Tab running IEx 
-        ```
-        iex> 
-        14:27:53.961 [error] GenServer #PID<0.242.0> terminating
-        ** (UndefinedFunctionError) function Foo.handle_request/1 is undefined (module Foo is not available)
-            Foo.handle_request(
-              { 
-                :RequestInitChain, 
-                [ 
-                  { :Validator, <<1, 229, ..., 36>>, 1647107211121726315 }, 
-                  { :Validator, <<1, 243, ..., 78>>, 8186817011543816184 }, 
-                  { :Validator, <<1, 102, ..., 16>>, 7982159435569315414 }, 
-                  { :Validator, <<1, 135, ..., 64>>, 2846252370576207682 }, 
-                  { :Validator, <<1, 241,..., 159>>, 637770835807807961 }, 
-                  { :Validator, <<1, 16, ..., 76>>, 4097788002864909056 }, 
-                  { :Validator, <<1, 152, ..., 70>>, 8116718250853054711 }, 
-                  { :Validator, <<1, 19, ..., 246>>, 3891949616163017026 }, 
-                  { :Validator, <<1, 179, ..., 254>>, 7045591847215797995 }, 
-                  { :Validator, <<1, 189, ..., 80>>, 4226073179895220771 }
-                ]
-              }
-            )
-            (abci_server) src/abci_server.erl:117: :abci_server.handle_requests/2
-            (abci_server) src/abci_server.erl:83: :abci_server.handle_info/2
-            (stdlib) gen_server.erl:616: :gen_server.try_dispatch/4
-            (stdlib) gen_server.erl:686: :gen_server.handle_msg/6
-            (stdlib) proc_lib.erl:247: :proc_lib.init_p_do_apply/3
-        Last message: { :tcp, #Port<0.5297>, <<2, 1, ..., 148, ...>> }
-        State:        { :state, #Port<0.5297>, :ranch_tcp, "", Foo}
-        
-        14:27:53.965 [error] Ranch listener Foo had connection process started with :abci_server:start_link/4 at #PID<0.242.0> exit with reason: 
-        { :undef, 
-          [ 
-            { 
-              Foo, 
-              :handle_request, [ 
-                RequestInitChain: [ 
-                  { :Validator, <<1, 229, ..., 36>>, 1647107211121726315 }, 
-                  { :Validator, <<1, 189, ..., 112, ...>>, 4226073179895220771 }
-                ]
-              ], 
-              []
-            }, 
-            { 
-              :abci_server, 
-              :handle_requests, 
-              2, 
-              [file: 'src/abci_server.erl', line: 117]
-            }, 
-            {
-              :abci_server, 
-              :handle_info, 
-              2, 
-              [file: 'src/abci_server.erl', line: 83]
-            }, 
-            {
-              :gen_server, 
-              :try_dispatch, 
-              4,
-              [file: 'gen_server.erl', line: 616]
-            }, 
-            {
-              :gen_server, 
-              :handle_msg, 
-              6, 
-              [file: 'gen_server.erl', line: 686]
-            }, 
-            {
-              :proc_lib, 
-              :init_p_do_apply, 
-              3, 
-              [file: 'proc_lib.erl', line: 247]
-            }
-          ]
-        }
-        ```
-
-      * Update Elixir App to define `handle_request` Handle Request, then re-run the following in a separete Bash Terminal whilst ABCI Server (Erlang) is running and it will return `Passed test: InitChain`. Refer to Sample ABCI Counter App https://github.com/KrzysiekJ/abci_counter/tree/master/src
-        ```
-        abci-cli test
-        ```
-
-      * Run Tendermint Node
-        ```
-        tendermint init;
-        tendermint unsafe_reset_all;
-        tendermint node --help;
-        tendermint node \
-          --abci "socket" \
-          --consensus.create_empty_blocks true \
-          --fast_sync true \
-          --moniker "LS.local" \
-          --p2p.laddr "tcp://0.0.0.0:46656" \
-          --p2p.pex true \
-          --p2p.seeds "tcp://127.0.0.1:46656, tcp://127.0.0.1:46666, tcp://127.0.0.1:46676, tcp://127.0.0.1:46686" \
-          --p2p.skip_upnp false \
-          --proxy_app "tcp://127.0.0.1:46658" \
-          --rpc.laddr "tcp://0.0.0.0:46657" \
-          --rpc.unsafe true \
-          --home "/Users/Ls/.tendermint" \
-          --log_level "state:info,*:error" \
-          --trace true
-        ```
-
-      * Launch Testnet Nodes (4 OFF) in separate Terminal Tabs using Shell Script
-        ```bash
-        $ bash launch_testnet_nodes.sh
-        Tendermint Testnet Location: /Users/Ls/code/blockchain/tendermint-elixir/mytestnet
-        Loading Nodes: mach0, mach1, mach2, mach3
-        Loading Seeds: 0.0.0.0:46656,0.0.0.0:46666,0.0.0.0:46676,0.0.0.0:46686
-        Successfully initialized 4 node directories
-        ```
-
-      * ABCI-CLI Examples
-        * CheckTx
-          ```
-          abci-cli check_tx "0x00" --address tcp://localhost:46658 --abci "socket" --log_level "debug" --verbose
-          ``` 
-        * Echo
-          ```
-          abci-cli echo "Hello" --address tcp://localhost:46658 --abci "socket" --log_level "debug" --verbose
-          ``` 
-        * DeliverTx
-          ```
-          abci-cli deliver_tx "0x00" --address tcp://localhost:46658 --abci "socket" --log_level "debug" --verbose
-          ```
-        * Query
-          ```
-          abci-cli query "0x00" --address tcp://localhost:46658 --abci "socket" --log_level "debug" --verbose
-          ```
-
-      * Stop the ABCI Server (Erlang)
-        ```
-        iex> ok = :abci_server.stop_listener(Foo)             
-        :ok
-        ```
-
-      * Experiment with ABCI-CLI from separate Bash Terminal Tab after starting ABCI Server in IEx
-        ```
-        abci-cli check_tx "0x00" --address tcp://localhost:46658 --abci "socket" --log_level "debug" --verbose
-        ```
-
-# Open Source Contributions
+# Open Source Contributions and Community Questions <a id="chapter-11"></a>
 
 * Merkle Tree
   * Pull Request - https://github.com/yosriady/merkle_tree/pull/8
@@ -472,13 +554,11 @@ $ tendermint node --proxy_app=/var/run/abci.sock
     * https://github.com/KrzysiekJ/abci_server/issues/4
     * https://github.com/KrzysiekJ/abci_server/issues/5
 
-# Questions
+  * Questions
+    * Elixir Slack 
+      * https://elixir-lang.slack.com/archives/C03EPRA3B/p1517016786000068
 
-* ABCI Server 
-  * Elixir Slack 
-    * https://elixir-lang.slack.com/archives/C03EPRA3B/p1517016786000068
-
-# Troubleshooting
+# Troubleshooting and FAQ <a id="chapter-12"></a>
 
 * Problem: `erlang.mk:26: Please upgrade to GNU Make 4 or later: https://erlang.mk/guide/installation.html`
   * Solution:
@@ -517,26 +597,9 @@ https://tendermint.readthedocs.io/en/master/how-to-read-logs.html
   ```
   E[01-27|05:47:23.729] Stopping abci.socketClient for error: EOF    module=abci-client connection=query
   ```
+  * **UNRESOLVED**
 
-# Other Notes
-
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `blockchain_tendermint` to your list of dependencies in `mix.exs`:
-
-```elixir
-def deps do
-  [
-    {:blockchain_tendermint, "~> 0.1.0"}
-  ]
-end
-```
-
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/blockchain_tendermint](https://hexdocs.pm/blockchain_tendermint).
-
-
-# About Tendermint
+# About Tendermint <a id="chapter-13"></a>
 
 * Tendermint
 
@@ -803,7 +866,7 @@ be found at [https://hexdocs.pm/blockchain_tendermint](https://hexdocs.pm/blockc
   * Communication between TendermintCore and Tendermint Applications
     * TMSP (Simple Messaging Protocol)
 
-# References
+# References <a id="chapter-14"></a>
 
 * Tendermint
   * TODO
@@ -821,7 +884,7 @@ be found at [https://hexdocs.pm/blockchain_tendermint](https://hexdocs.pm/blockc
 * Erlang 
   * TODO - Erlang Standard Library - http://erlang.org/doc/apps/stdlib/index.html
 
-* Scrap Notes:
+# Unsorted Notes <a id="chapter-15"></a>
 
 ```
 cd $GOPATH/src/github.com/tendermint/tendermint
