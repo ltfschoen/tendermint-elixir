@@ -62,6 +62,14 @@ defmodule BlockchainTendermint do
     {:reply, "Initialised Chain"}
   end
 
+  def deliver_tx(arg) do
+     {:reply, "Deliver Tx"}
+  end
+
+  def check_tx(arg) do
+     {:reply, "Check Tx"}
+  end
+
   def query(req) do
     { :data, "req: #{req}" }
   end
