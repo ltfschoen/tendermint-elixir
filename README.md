@@ -422,6 +422,15 @@ $ tendermint node --proxy_app=/var/run/abci.sock
           --trace true
         ```
 
+      * Launch Testnet Nodes (4 OFF) in separate Terminal Tabs using Shell Script
+        ```bash
+        $ bash launch_testnet_nodes.sh
+        Tendermint Testnet Location: /Users/Ls/code/blockchain/tendermint-elixir/mytestnet
+        Loading Nodes: mach0, mach1, mach2, mach3
+        Loading Seeds: 0.0.0.0:46656,0.0.0.0:46666,0.0.0.0:46676,0.0.0.0:46686
+        Successfully initialized 4 node directories
+        ```
+
       * ABCI-CLI Examples
         * CheckTx
           ```
