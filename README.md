@@ -597,7 +597,9 @@ https://tendermint.readthedocs.io/en/master/how-to-read-logs.html
   ```
   E[01-27|05:47:23.729] Stopping abci.socketClient for error: EOF    module=abci-client connection=query
   ```
-  * **UNRESOLVED** - https://matrix.to/#/!vIMgGaMqkLIWPCZvPF:matrix.org/$151705250910696925POLba:matrix.org
+  * **UNRESOLVED**
+    * https://matrix.to/#/!vIMgGaMqkLIWPCZvPF:matrix.org/$151705250910696925POLba:matrix.org
+    * https://github.com/tendermint/tendermint/issues/1166
 
 # About Tendermint <a id="chapter-13"></a>
 
