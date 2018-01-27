@@ -395,12 +395,60 @@ $ tendermint node --proxy_app=/var/run/abci.sock
         }
         ```
 
-      * Update Elixir App to define `handle_request` Handle Request, then re-run `abci-cli test` in a separete Bash Terminal whilst ABCI Server (Erlang) is running and it will return `Passed test: InitChain`. Refer to Sample ABCI Counter App https://github.com/KrzysiekJ/abci_counter/tree/master/src
+      * Update Elixir App to define `handle_request` Handle Request, then re-run the following in a separete Bash Terminal whilst ABCI Server (Erlang) is running and it will return `Passed test: InitChain`. Refer to Sample ABCI Counter App https://github.com/KrzysiekJ/abci_counter/tree/master/src
+        ```
+        abci-cli test
+        ```
+
+      * Run Tendermint Node
+        ```
+        tendermint init;
+        tendermint unsafe_reset_all;
+        tendermint node --help;
+        tendermint node \
+          --abci "socket" \
+          --consensus.create_empty_blocks true \
+          --fast_sync true \
+          --moniker "LS.local" \
+          --p2p.laddr "tcp://0.0.0.0:46656" \
+          --p2p.pex true \
+          --p2p.seeds "tcp://127.0.0.1:46656, tcp://127.0.0.1:46666, tcp://127.0.0.1:46676, tcp://127.0.0.1:46686" \
+          --p2p.skip_upnp false \
+          --proxy_app "tcp://127.0.0.1:46658" \
+          --rpc.laddr "tcp://0.0.0.0:46657" \
+          --rpc.unsafe true \
+          --home "/Users/Ls/.tendermint" \
+          --log_level "state:info,*:error" \
+          --trace true
+        ```
+
+      * ABCI-CLI Examples
+        * CheckTx
+          ```
+          abci-cli check_tx "0x00" --address tcp://localhost:46658 --abci "socket" --log_level "debug" --verbose
+          ``` 
+        * Echo
+          ```
+          abci-cli echo "Hello" --address tcp://localhost:46658 --abci "socket" --log_level "debug" --verbose
+          ``` 
+        * DeliverTx
+          ```
+          abci-cli deliver_tx "0x00" --address tcp://localhost:46658 --abci "socket" --log_level "debug" --verbose
+          ```
+        * Query
+          ```
+          abci-cli query "0x00" --address tcp://localhost:46658 --abci "socket" --log_level "debug" --verbose
+          ```
 
       * Stop the ABCI Server (Erlang)
         ```
         iex> ok = :abci_server.stop_listener(Foo)             
         :ok
+        ```
+
+      * Experiment with ABCI-CLI from separate Bash Terminal Tab after starting ABCI Server in IEx
+        ```
+        abci-cli check_tx "0x00" --address tcp://localhost:46658 --abci "socket" --log_level "debug" --verbose
         ```
 
 # Open Source Contributions
@@ -453,8 +501,13 @@ $ tendermint node --proxy_app=/var/run/abci.sock
       ```
 
 * Problem: `** (Mix) Could not start application ranch: could not find application file: ranch.app`
-  * See Issue raised https://github.com/KrzysiekJ/abci_server/issues/4
+  * Solved: See Issue raised https://github.com/KrzysiekJ/abci_server/issues/4
 
+* Problem: After running ABCI Server, when I try and connect with `tendermint node`, it gives the following error, which is not listed on the Tendermint how to read logs webpage -
+https://tendermint.readthedocs.io/en/master/how-to-read-logs.html
+  ```
+  E[01-27|05:47:23.729] Stopping abci.socketClient for error: EOF    module=abci-client connection=query
+  ```
 
 # Other Notes
 

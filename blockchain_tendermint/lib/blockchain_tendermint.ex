@@ -61,4 +61,8 @@ defmodule BlockchainTendermint do
   def handle_request(arg) do
     {:reply, "Initialised Chain"}
   end
+
+  def query(req) do
+    { :data, "req: #{req}" }
+  end
 end
