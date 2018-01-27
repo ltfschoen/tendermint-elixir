@@ -311,7 +311,94 @@ $ tendermint node --proxy_app=/var/run/abci.sock
 
         iex> {ok, _} = :abci_server.start_listener(Foo, 46658)
         {:ok, #PID<0.181.0>}
+        ```
 
+      * Test the Running ABCI Server (Erlang) in separate Bash Terminal Tab - https://github.com/tendermint/abci#tools
+        ```
+        abci-cli test
+        ```
+
+      * View Output in the Bash Terminal Tab running IEx 
+        ```
+        iex> 
+        14:27:53.961 [error] GenServer #PID<0.242.0> terminating
+        ** (UndefinedFunctionError) function Foo.handle_request/1 is undefined (module Foo is not available)
+            Foo.handle_request(
+              { 
+                :RequestInitChain, 
+                [ 
+                  { :Validator, <<1, 229, ..., 36>>, 1647107211121726315 }, 
+                  { :Validator, <<1, 243, ..., 78>>, 8186817011543816184 }, 
+                  { :Validator, <<1, 102, ..., 16>>, 7982159435569315414 }, 
+                  { :Validator, <<1, 135, ..., 64>>, 2846252370576207682 }, 
+                  { :Validator, <<1, 241,..., 159>>, 637770835807807961 }, 
+                  { :Validator, <<1, 16, ..., 76>>, 4097788002864909056 }, 
+                  { :Validator, <<1, 152, ..., 70>>, 8116718250853054711 }, 
+                  { :Validator, <<1, 19, ..., 246>>, 3891949616163017026 }, 
+                  { :Validator, <<1, 179, ..., 254>>, 7045591847215797995 }, 
+                  { :Validator, <<1, 189, ..., 80>>, 4226073179895220771 }
+                ]
+              }
+            )
+            (abci_server) src/abci_server.erl:117: :abci_server.handle_requests/2
+            (abci_server) src/abci_server.erl:83: :abci_server.handle_info/2
+            (stdlib) gen_server.erl:616: :gen_server.try_dispatch/4
+            (stdlib) gen_server.erl:686: :gen_server.handle_msg/6
+            (stdlib) proc_lib.erl:247: :proc_lib.init_p_do_apply/3
+        Last message: { :tcp, #Port<0.5297>, <<2, 1, ..., 148, ...>> }
+        State:        { :state, #Port<0.5297>, :ranch_tcp, "", Foo}
+        
+        14:27:53.965 [error] Ranch listener Foo had connection process started with :abci_server:start_link/4 at #PID<0.242.0> exit with reason: 
+        { :undef, 
+          [ 
+            { 
+              Foo, 
+              :handle_request, [ 
+                RequestInitChain: [ 
+                  { :Validator, <<1, 229, ..., 36>>, 1647107211121726315 }, 
+                  { :Validator, <<1, 189, ..., 112, ...>>, 4226073179895220771 }
+                ]
+              ], 
+              []
+            }, 
+            { 
+              :abci_server, 
+              :handle_requests, 
+              2, 
+              [file: 'src/abci_server.erl', line: 117]
+            }, 
+            {
+              :abci_server, 
+              :handle_info, 
+              2, 
+              [file: 'src/abci_server.erl', line: 83]
+            }, 
+            {
+              :gen_server, 
+              :try_dispatch, 
+              4,
+              [file: 'gen_server.erl', line: 616]
+            }, 
+            {
+              :gen_server, 
+              :handle_msg, 
+              6, 
+              [file: 'gen_server.erl', line: 686]
+            }, 
+            {
+              :proc_lib, 
+              :init_p_do_apply, 
+              3, 
+              [file: 'proc_lib.erl', line: 247]
+            }
+          ]
+        }
+        ```
+
+      * Update Elixir App to define `handle_request` Handle Request, then re-run `abci-cli test` in a separete Bash Terminal whilst ABCI Server (Erlang) is running and it will return `Passed test: InitChain`. Refer to Sample ABCI Counter App https://github.com/KrzysiekJ/abci_counter/tree/master/src
+
+      * Stop the ABCI Server (Erlang)
+        ```
         iex> ok = :abci_server.stop_listener(Foo)             
         :ok
         ```
