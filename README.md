@@ -83,9 +83,18 @@ TENDERMINT-ELIXIR
   tendermint --help
   ```
 
+## Install JSON Pretty Print
+
+* Install JSONPP - https://jmhodges.github.io/jsonpp/
+  ```
+  brew install jsonpp
+  ```
+
 # Initialise and Configure Tendermint <a id="chapter-3"></a>
 
 ## Initialise Tendermint
+
+* Create new Private Key `priv_validator.json`, and Genesis File `genesis.json` containing associated Public Key 
   ```bash
   tendermint init
   ```
@@ -108,16 +117,21 @@ TENDERMINT-ELIXIR
   # This is a TOML config file.
   # For more information, see https://github.com/toml-lang/toml
 
-  proxy_app = "tcp://127.0.0.1:46658"
+  # ABCI Application Socket Address
+  proxy_app = "tcp://0.0.0.0:46658"
+
+  # Node Name
   moniker = "<MY_NETWORK_NAME>.local"
   fast_sync = true
   db_backend = "leveldb"
   log_level = "state:info,*:error"
 
   [rpc]
+  # RPC Server Listening Address
   laddr = "tcp://0.0.0.0:46657"
 
   [p2p]
+  # Peer Listening Address on Tendermint
   laddr = "tcp://0.0.0.0:46656"
   seeds = ""
   ```
@@ -264,6 +278,25 @@ TENDERMINT-ELIXIR
   Loading Seeds: 0.0.0.0:46656,0.0.0.0:46666,0.0.0.0:46676,0.0.0.0:46686
   Successfully initialized 4 node directories
   ```
+  * Troubleshooting: If nothing appears in each of the separate Terminal Tabs then in restart the server in IEx with:
+    ```elixir
+    k = BlockchainTendermint.stop_server
+    {ok, _} = BlockchainTendermint.start_server
+    ```
+
+    * Example output in each separate Terminal Tab
+
+      ```bash
+      E[01-27|23:38:17.914] Stopping abci.socketClient for error: EOF    module=abci-client connection=query
+      E[01-27|23:38:29.069] Stopping abci.socketClient for error: EOF    module=abci-client connection=mempool
+      E[01-27|23:38:29.069] Stopping abci.socketClient for error: EOF    module=abci-client connection=consensus
+
+      E[01-27|23:38:29.068] Stopping abci.socketClient for error: read tcp 127.0.0.1:63711->127.0.0.1:46658: read: connection reset by peer module=abci-client connection=query
+      E[01-27|23:38:29.068] Stopping abci.socketClient for error: read tcp 127.0.0.1:63713->127.0.0.1:46658: read: connection reset by peer module=abci-client connection=consensus
+      E[01-27|23:38:29.069] Stopping abci.socketClient for error: read tcp 127.0.0.1:63712->127.0.0.1:46658: read: connection reset by peer module=abci-client connection=mempool
+      ```
+
+  * **UNRESOLVED**
 
 * Optional Alternative Deployment 
   * Kubernetes - https://github.com/tendermint/tools/tree/master/mintnet-kubernetes
@@ -271,14 +304,24 @@ TENDERMINT-ELIXIR
 
 # Experimentation with cURL Requests to ABCI Server (Erlang) <a id="chapter-6"></a>
 
-**UNRESOLVED**
+* Show all available API endpoints by going to http://0.0.0.0:46658/
 
-* Show all available API endpoints by going to http://localhost:46657/
+  * **UNRESOLVED**
 
-* Send Request to ABCI Server endpoint
+* Send Request to ABCI Server endpoint. Note: Must use `0.0.0.0` NOT `localhost`
   ```
-  curl -s 'localhost:46658/status'
+  curl -v '0.0.0.0:46658/status' | jsonpp | grep app_hash
+    *   Trying 0.0.0.0...
+    * TCP_NODELAY set
+    * Connected to 0.0.0.0 (0.0.0.0) port 46658 (#0)
+    > GET /status HTTP/1.1
+    > Host: 0.0.0.0:46658
+    > User-Agent: curl/7.57.0
+    > Accept: */*
+    > 
   ```
+
+  * **UNRESOLVED**
 
 # Experimentation with ABCI-CLI <a id="chapter-7"></a>
 
@@ -287,22 +330,22 @@ TENDERMINT-ELIXIR
 * Experiment with ABCI-CLI (from separate Bash Terminal Tab after starting ABCI Server in IEx)
   * CheckTx
     ```bash
-    abci-cli check_tx "0x00" --address tcp://localhost:46658 --abci "socket" --log_level "debug" --verbose
+    abci-cli check_tx "0x00" --address tcp://0.0.0.0:46658 --abci "socket" --log_level "debug" --verbose
     ```
 
   * Echo
     ```bash
-    abci-cli echo "Hello" --address tcp://localhost:46658 --abci "socket" --log_level "debug" --verbose
+    abci-cli echo "Hello" --address tcp://0.0.0.0:46658 --abci "socket" --log_level "debug" --verbose
     ```
 
   * DeliverTx
     ```bash
-    abci-cli deliver_tx "0x00" --address tcp://localhost:46658 --abci "socket" --log_level "debug" --verbose
+    abci-cli deliver_tx "0x00" --address tcp://0.0.0.0:46658 --abci "socket" --log_level "debug" --verbose
     ```
 
   * Query
     ```bash
-    abci-cli query "0x00" --address tcp://localhost:46658 --abci "socket" --log_level "debug" --verbose
+    abci-cli query "0x00" --address tcp://0.0.0.0:46658 --abci "socket" --log_level "debug" --verbose
     ```
 
 # Experimentation with Tendermint (Single Node) <a id="chapter-8"></a>
