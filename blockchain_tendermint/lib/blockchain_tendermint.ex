@@ -8,15 +8,17 @@ defmodule BlockchainTendermint do
   @doc """
   Shows Functions available for MerkleTree Library in Elixir.
 
-  ## Examples
+  ## Non-Doctest Examples (i.e. no iex>)
 
-      iex> BlockchainTendermint.merkle
+      BlockchainTendermint.merkle
       MerkleTree Library in Elixir Information
       [__struct__: 0, __struct__: 1, build: 2, new: 1, new: 2]
+      {:ok, true}
   """
   def merkle do
     IO.puts("MerkleTree Library in Elixir Information")
     MerkleTree.__info__(:functions)
+    {:ok, true}
   end
 
   @doc """
@@ -26,9 +28,9 @@ defmodule BlockchainTendermint do
     - https://github.com/KrzysiekJ/abci_server/blob/master/doc/overview.edoc
     - ABCI Server Docs
 
-  ## Examples
+  ## Non-Doctest Examples
 
-      iex> BlockchainTendermint.start_server
+      BlockchainTendermint.start_server
       {:ok, #PID<0.282.0>}
   """
   def start_server do
@@ -38,9 +40,9 @@ defmodule BlockchainTendermint do
   @doc """
   Stops the ABCI Server (Erlang)
 
-  ## Examples
+  ## Non-Doctest Examples
 
-      iex> BlockchainTendermint.stop_server
+      BlockchainTendermint.stop_server
       :ok
   """
   def stop_server do
@@ -53,10 +55,10 @@ defmodule BlockchainTendermint do
     is running identifies in IEx Bash Terminal that this Function must be defined.
     After being defined it returns `Passed test: InitChain` 
 
-  ## Examples
+  ## Doctest Examples
 
-      iex> BlockchainTendermint.handle_request
-      :ok
+      iex> BlockchainTendermint.handle_request("")
+      {:ok, true}
   """
   def handle_request(tx_args) do
     IO.puts("Processing Transaction")

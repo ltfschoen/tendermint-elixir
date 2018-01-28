@@ -2,7 +2,7 @@ defmodule BlockchainTendermintTest do
   use ExUnit.Case
   doctest BlockchainTendermint
 
-  test "greets the world" do
-    assert BlockchainTendermint.hello() == :world
+  test "verifies that sender and recipient of a transaction are from genesis whitelist" do
+    assert BlockchainTendermint.handle_request("") == {:ok, true}
   end
 end

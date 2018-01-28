@@ -310,6 +310,13 @@ TENDERMINT-ELIXIR
   BlockchainTendermint.stop_server
   ```
 
+# Run Mix Unit Tests and Doctests <a id="chapter-4.5"></a>
+
+* Run Unit Tests and Doctests with Mix
+  ```bash
+  mix test
+  ```
+
 # Run Tendermint (Multiple Testnet Nodes) <a id="chapter-5"></a>
 
 * Launch Testnet Nodes (4 OFF) (in separate Terminal Tabs using Shell Script)
