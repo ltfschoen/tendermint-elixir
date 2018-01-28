@@ -635,7 +635,7 @@ TENDERMINT-ELIXIR
 * Problem: `** (Mix) Could not start application ranch: could not find application file: ranch.app`
   * Solved: See Issue raised https://github.com/KrzysiekJ/abci_server/issues/4
 
-* Problem: After running ABCI Server, when I try and connect with `tendermint node`, it gives the following error, which is not listed on the Tendermint how to read logs webpage -
+* Problem: Unable to communicate with Elixir ABCI App. After running ABCI Server, when I try and connect with `tendermint node`, it gives the following error, which is not listed on the Tendermint how to read logs webpage -
 https://tendermint.readthedocs.io/en/master/how-to-read-logs.html
   ```
   E[01-27|05:47:23.729] Stopping abci.socketClient for error: EOF    module=abci-client connection=query
@@ -643,6 +643,10 @@ https://tendermint.readthedocs.io/en/master/how-to-read-logs.html
   * **UNRESOLVED**
     * https://matrix.to/#/!vIMgGaMqkLIWPCZvPF:matrix.org/$151705250910696925POLba:matrix.org
     * https://github.com/tendermint/tendermint/issues/1166
+
+* Problem: Tendermint Testnet Node flags moniker and seed do not overwrite as expected
+  * **UNRESOLVED**
+    * https://github.com/tendermint/tendermint/issues/1167
 
 # About Tendermint <a id="chapter-13"></a>
 
