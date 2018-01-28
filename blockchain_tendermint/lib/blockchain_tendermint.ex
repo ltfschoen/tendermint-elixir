@@ -58,19 +58,130 @@ defmodule BlockchainTendermint do
       iex> BlockchainTendermint.handle_request
       :ok
   """
-  def handle_request(arg) do
-    {:reply, "Initialised Chain"}
-  end
+  def handle_request(tx_args) do
+    IO.puts("Processing Transaction")
 
-  def deliver_tx(arg) do
-     {:reply, "Deliver Tx"}
-  end
+    # Send Transaction to Tendermint Node via the `broadcast_tx_commit` Endpoint. 
+    # Note: Tendermint Node will run via CheckTx against the Elixir ABCI Application.
+    #       If CheckTx passes the Tx is included in the Mempool, Broadcast to Peers, 
+    #       and eventually included in a Block
+    # Note: `broadcast_tx_commit` returns after transaction committed in block or until timeout.
+    #       It returns immediately if the transaction does not pass CheckTx.
+    #       The return value includes `check_tx` and `deliver_tx`, which is result of running the 
+    #       transaction through those ABCI messages
+    # - Option 1 (Preferred) - Use cURL to send ABCI requests from the CLI
+    #   i.e. curl -s 'localhost:46658/broadcast_tx_commit?tx="from=___&to=___&to_index=___&proof=___"'
+    # - Option 2 - Use ABCI-CLI to send ABCI requests from the CLI
+    #
+    # Note: Transaction with bytes "from=___&to=___&to_index=___&proof=___" are stored as Key and 
+    #       Value in Merkle Tree
 
-  def check_tx(arg) do
-     {:reply, "Check Tx"}
-  end
+    # Reference: 
+    # - https://tendermint.readthedocs.io/en/master/getting-started.html#dummy-a-first-example
+    # - http://tendermint.readthedocs.io/projects/tools/en/master/using-tendermint.html#broadcast-api
+    
+    # Example Response from Sending Transaction:
+    # {
+    #   "jsonrpc": "2.0",
+    #   "id": "",
+    #   "result": {
+    #     "check_tx": {
+    #       "code": 0,
+    #       "data": "",
+    #       "log": ""
+    #     },
+    #     "deliver_tx": {
+    #       "code": 0,
+    #       "data": "",
+    #       "log": ""
+    #     },
+    #     "hash": "2B8EC32BA2579B3B8606E42C06DE2F7AFA2556EF",
+    #     "height": 154
+    #   }
+    # }
 
-  def query(req) do
-    { :data, "req: #{req}" }
+    # Destructure Transaction Key/Value pairs from tx_args "from=___&to=___&to_index=___&proof=___"
+
+    # Simulate Generation of the Genesis Block whose Root Hash `root_hash` (32 Bytes) is:
+    # - Pre-Agreed at Genesis
+    # - Initial Data Blocks are the Array of Whitelisted Participant Addresses
+    # - Generate Merkle Tree by:
+    #   - Creating a Leaf Nodes from Merkle-Hashing (with the Merkle Tree's hash_function) each Data Block
+    #   - Recursively Build each Parent Node Hash from Hashing the Concatenation of their immediate 
+    #     Child Nodes values until only a Single Root Node remains. Return the Root Node Hash
+    #   - Merkle Root Node Hash in the Block Header is the the Hash of all Hashes of all Transactions in a Block 
+    #   - Block Header comprises Previous Block Header Merkle Root Hash and Current Block Header Merkle Root Hash
+    #   - Verify that Transaction from only the Block Headers and Merkle Tree Root Hash
+    # - Reference: https://yos.io/2016/05/19/merkle-trees-in-elixir/
+
+    # Data Blocks
+    whitelisted_participants = ["a", "b", "c", "d"]
+    # Genesis Block Header - https://github.com/tendermint/tendermint/wiki/Block-Structure#header
+    block_0_merkle_tree = MerkleTree.new whitelisted_participants
+    block_0_merkle_tree_root = block_0_merkle_tree.root()
+    # Genesis Block Merkle Tree Root Hash (LastBlockHash)
+    block_0_merkle_tree_root_hash = block_0_merkle_tree_root.value
+    IO.puts block_0_merkle_tree_root_hash
+
+    # Genesis Block Merkle Proof
+    # - Reference: https://blog.ethereum.org/2015/11/15/merkling-in-ethereum/
+    block_0_merkle_proof_chunk_path_branch_0 = MerkleTree.Proof.prove(block_0_merkle_tree, 0)
+    block_0_merkle_proof_chunk_path_branch_1 = MerkleTree.Proof.prove(block_0_merkle_tree, 1)
+    block_0_merkle_proof_chunk_path_branch_2 = MerkleTree.Proof.prove(block_0_merkle_tree, 2)
+    block_0_merkle_proof_chunk_path_branch_3 = MerkleTree.Proof.prove(block_0_merkle_tree, 3)
+    block_0_merkle_proof = [
+      block_0_merkle_proof_chunk_path_branch_0,
+      block_0_merkle_proof_chunk_path_branch_1,
+      block_0_merkle_proof_chunk_path_branch_2,
+      block_0_merkle_proof_chunk_path_branch_3
+    ]
+
+    # Simulate Receipt of Transaction: "from=___&to=___&to_index=___&proof=___"
+    # - Convert Query String Parameters into Key/Value Pairs
+    # FIXME - Should expect "from='a',..."
+    # FIXME - Convert Map to Stringified for `proof=#{block_0_merkle_proof}` 
+    #         - https://gist.github.com/ltfschoen/749a5c141fa3536a5e678757d0022c7a
+    tx_args_map = String.split("from=a&to=b&to_index=0&proof=''", ~r/&|=/) 
+      |> Enum.chunk(2) 
+      |> Map.new(fn [k, v] -> {k, v} end)
+
+    # Verify using a succinct Merkle Proof Calculation that the Sender in the `from` field of the 
+    # Transaction is a Whitelisted Participants. Note: Non-Validators have `seed: ""` in genesis.json
+    proven_from_sender_field = Enum.any?(block_0_merkle_proof, fn(block_0_merkle_proof_chunk_path_branch) -> 
+      MerkleTree.Proof.proven?(
+        {tx_args_map["from"], 0}, # If `from=a` then use 0, else if `from=b` then use 1, etc
+        block_0_merkle_tree_root_hash, 
+        block_0_merkle_proof_chunk_path_branch
+      )
+    end)
+    # Note: Above returns `true`
+
+    # # Deprecated approach since requires verifying against each individually
+    # proven0 = MerkleTree.Proof.proven?(
+    #   {tx_args_map["from"], 0}, 
+    #   block_0_merkle_tree_root_hash, 
+    #   block_0_merkle_proof_chunk_path_branch_0
+    # )
+
+    # Verify using a succinct Merkle Proof Calculation that the Recipient in the `to` field of the 
+    # Transaction is a Whitelisted Participants.
+    proven_to_recipient_field = Enum.any?(block_0_merkle_proof, fn(block_0_merkle_proof_chunk_path_branch) -> 
+      MerkleTree.Proof.proven?(
+        {tx_args_map["to"], 1}, # If `from=a` then use 0, else if `from=b` then use 1, etc
+        block_0_merkle_tree_root_hash, 
+        block_0_merkle_proof_chunk_path_branch
+      )
+    end)
+    # Note: Above returns `true`
+
+    # Return whether Tx is Valid
+    valid_tx = Enum.any?([
+      proven_from_sender_field, 
+      proven_to_recipient_field, 
+      ], fn(s) -> true end
+    )
+    IO.puts("Validity of Transaction: #{valid_tx}")
+
+    {:ok, valid_tx}
   end
 end

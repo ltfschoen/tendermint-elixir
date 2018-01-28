@@ -37,18 +37,18 @@ TENDERMINT-ELIXIR
   * [X] Start the Tendermint ABCI Server (Erlang)
   * [X] Stop the Tendermint ABCI Server (Erlang)
 * [X] Create Shell Script to generate Tendermint Testnet with four (4) Nodes `bash launch_testnet_nodes.sh`
-* [ ] Write Elixir Tendermint Application that implements the Tendermint ABCI (Application BlockChain Interface. Handle Byzantine Fault Tolerance (BFT) replication of the following State:
-  * [ ] Root Hash `root_hash` is Pre-Agreed at Genesis and is Generated from the Merkle-Hash of an Array of Whitelisted Participants Addresses 
+* [.] Write Elixir Tendermint Application that implements the Tendermint ABCI (Application BlockChain Interface. Handle Byzantine Fault Tolerance (BFT) replication of the following State:
+  * [.] Root Hash `root_hash` is Pre-Agreed at Genesis and is Generated from the Merkle-Hash of an Array of Whitelisted Participants Addresses 
     * `whitelisted = ["a", "b", "c", "d"]`
-  * [ ] Verification of the passing the "Ball" Transaction
-    * [ ] Simulate the Act of passing a "Ball" around with a Transaction comprising `from`, `to`, `to_index`, `proof` fields
-    * [ ] Verify before passing the "Ball" around using a succinct Merkle Proof Calculation that the Sender of the "Ball" in the `from` field of the Transaction actually held the "Ball" and is a Whitelisted Participants
-    * [ ] Verify before passing the "Ball" around using a succinct Merkle Proof Calculation that the Recipient of the "Ball" in the `to` field of the Transaction is actually a Whitelisted Participant
+  * [.] Verification of the passing the "Ball" Transaction
+    * [.] Simulate the Act of passing a "Ball" around with a Transaction comprising `from`, `to`, `to_index`, `proof` fields
+    * [.] Verify before passing the "Ball" around using a succinct Merkle Proof Calculation that the Sender of the "Ball" in the `from` field of the Transaction actually held the "Ball" and is a Whitelisted Participants
+    * [.] Verify before passing the "Ball" around using a succinct Merkle Proof Calculation that the Recipient of the "Ball" in the `to` field of the Transaction is actually a Whitelisted Participant
     * [ ] Verify before passing the "Ball" around using a succinct Merkle Proof Calculation that the Recipient of the "Ball" is at the Address of the `to_index` field of the Transaction and is proven by the `proof` field of the Transaction, which is a List of Hashes
     * [ ] Verify using a succinct Merkle Proof Calculation that only a Single Whitelisted Participant is holding the "Ball" at a time
   * [ ] Verify using a succinct Merkle Proof Calculation that the Recipient of the "Ball" is the Whitelisted Participant of the `to` field in the Transaction only after successful Validation of the passing the "Ball" Transaction
-  * [ ] Verify that only the Merke Tree Erlang Library is implemented to perform succinct Merkle Proof Calculations to demonstrate State-Replication https://github.com/yosriady/merkle_tree#usage
-    * [ ] Verify that State-Replication of the Whitelisted Participant Addressses (`whitelisted`) is only performed on the Merkle Tree `root_hash` and not verbosely
+  * [.] Verify that only the Merke Tree Erlang Library is implemented to perform succinct Merkle Proof Calculations to demonstrate State-Replication https://github.com/yosriady/merkle_tree#usage
+    * [.] Verify that State-Replication of the Whitelisted Participant Addressses (`whitelisted`) is only performed on the Merkle Tree `root_hash` and not verbosely
   * [ ] Write Functions to handle calls for `CheckTx` and `DeliverTx` in Elixir
   * [ ] Write Stubs for Tendermint Commits, Inits, BeginBlocks, EndBlocks, and Infos if necessary
   * [ ] Generate Documentation with [ExDoc](https://github.com/elixir-lang/ex_doc) and published on [HexDocs](https://hexdocs.pm)
@@ -99,6 +99,13 @@ TENDERMINT-ELIXIR
   tendermint init
   ```
 
+## Reset Tendermint (if necessary)
+  ```bash
+  cd ~/.tendermint 
+  rm -rf data/
+  tendermint unsafe_reset_priv_validator
+  ```
+
 ## Configure Tendermint
 
 * View Tendermint Directory Root 
@@ -111,7 +118,7 @@ TENDERMINT-ELIXIR
   priv_validator.json
   ```  
 
-* View TOML Configuration File
+* View/Edit TOML Configuration File - https://github.com/tendermint/tendermint/wiki/Configuration
   ```bash
   $ cat ~/.tendermint/config.toml
   # This is a TOML config file.
@@ -125,6 +132,10 @@ TENDERMINT-ELIXIR
   fast_sync = true
   db_backend = "leveldb"
   log_level = "state:info,*:error"
+
+  # Allow Tendermint p2p library to make connections to peers with the same IP address
+  # https://tendermint.readthedocs.io/en/master/using-tendermint.html#local-network
+  addrbook_strict = false
 
   [rpc]
   # RPC Server Listening Address
@@ -255,9 +266,9 @@ TENDERMINT-ELIXIR
   MIX_ENV=dev mix compile
   ```
 
-## Run Elixir ABCI Application in Interactive Elixir (IEx) REPL
+## Run Elixir ABCI Application in Interactive Elixir (IEx) REPL to Demonstrate Verification of Transaction Sender/Recipient
 
-* Interactively Elixir (REPL) within context of Elixir App and dependencies injected into IEx runtime)
+* Interactive Elixir (REPL) within context of Elixir App and dependencies injected into IEx runtime
   ```bash
   iex -S mix
   ```
@@ -265,6 +276,37 @@ TENDERMINT-ELIXIR
   ```elixir
   c("lib/blockchain_tendermint.ex")
   BlockchainTendermint.start_server
+  ```
+
+* Run Tendermint Node 
+  ```
+  tendermint node
+  ```
+
+* Send cURL Request to ABCI Server endpoint.
+  ```
+  curl -s 'localhost:46658/broadcast_tx_commit?tx="from=___&to=___&to_index=___&proof=___"'
+  ```
+
+* View Logs from ABCI Server in IEx Terminal Window. Shows Outputs of `handle_request` function in Elixir ABCI App
+  ```
+  iex(1)> BlockchainTendermint.start_server
+  {:ok, #PID<0.168.0>}
+  iex(2)> Processing Transaction
+  58c89d709329eb37285837b042ab6ff72c7c8f74de0446b091b6a0131c102cfd
+  Validity of Transaction: true
+
+  20:32:18.499 [error] GenServer #PID<0.176.0> terminating
+  ** (FunctionClauseError) no function clause matching in :abci.e_msg_ResponseInfo/3
+      ...
+  Last message: {:tcp, #Port<0.5191>, <<1, 10, 34, 8, 10, 6, 48, 46, 49, 53, 46, 48, 1, 2, 26, 0>>}
+  State: {:state, #Port<0.5191>, :ranch_tcp, "", BlockchainTendermint}
+  
+  20:32:18.502 [error] Ranch listener BlockchainTendermint had connection process started with :abci_server:start_link/4 at #PID<0.176.0> exit with reason: ...
+  ```
+
+* Stop Server
+  ```elixir
   BlockchainTendermint.stop_server
   ```
 
@@ -532,20 +574,48 @@ TENDERMINT-ELIXIR
       * Allows efficent and secure verification of the contents of large data structures
       * Default Hash Function is `:sha256`
       * API Docs Reference: https://hexdocs.pm/merkle_tree/MerkleTree.html#new/2
+      * Reference: 
+        * Merkle Trees in Elixir Blogpost: https://yos.io/2016/05/19/merkle-trees-in-elixir/
 
     ```elixir
     iex> MerkleTree.__info__(:functions)
     [__struct__: 0, __struct__: 1, build: 2, new: 1, new: 2]
     iex> mt = MerkleTree.new ['a', 'b', 'c', 'd']
-    %MerkleTree{blocks: ['a', 'b', 'c', 'd'], hash_function: &MerkleTree.Crypto.sha256/1,
-          root: %MerkleTree.Node{children: [%MerkleTree.Node{children: [%MerkleTree.Node{children: [],
-              value: "ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb"},
-              %MerkleTree.Node{children: [], value: "3e23e8160039594a33894f6564e1b1348bbd7a0088d42c4acb73eeaed59c009d"}],
-            value: "62af5c3cb8da3e4f25061e829ebeea5c7513c54949115b1acc225930a90154da"},
-            %MerkleTree.Node{children: [%MerkleTree.Node{children: [], value: "2e7d2c03a9507ae265ecf5b5356885a53393a2029d241394997265a1a25aefc6"},
-              %MerkleTree.Node{children: [], value: "18ac3e7343f016890c510e93f935261169d9e3f565436429830faf0934f4f8e4"}],
-            value: "d3a0f1c792ccf7f1708d5422696263e35755a86917ea76ef9242bd4a8cf4891a"}],
-          value: "58c89d709329eb37285837b042ab6ff72c7c8f74de0446b091b6a0131c102cfd"}}
+    %MerkleTree{
+      blocks: ['a', 'b', 'c', 'd'], 
+      hash_function: &MerkleTree.Crypto.sha256/1,
+      root: 
+        %MerkleTree.Node {
+          children: [ 
+            %MerkleTree.Node {
+              children: [ 
+                %MerkleTree.Node {
+                  children: [],
+                  value: "ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb"
+                },
+                %MerkleTree.Node {
+                  children: [], 
+                  value: "3e23e8160039594a33894f6564e1b1348bbd7a0088d42c4acb73eeaed59c009d"
+                }
+              ],
+              value: "62af5c3cb8da3e4f25061e829ebeea5c7513c54949115b1acc225930a90154da"
+            },
+            %MerkleTree.Node {
+              children: [
+                %MerkleTree.Node {
+                  children: [], 
+                  value: "2e7d2c03a9507ae265ecf5b5356885a53393a2029d241394997265a1a25aefc6"
+                },
+                %MerkleTree.Node {
+                  children: [], 
+                  value: "18ac3e7343f016890c510e93f935261169d9e3f565436429830faf0934f4f8e4"}
+              ],
+              value: "d3a0f1c792ccf7f1708d5422696263e35755a86917ea76ef9242bd4a8cf4891a"
+            }
+          ],
+          value: "58c89d709329eb37285837b042ab6ff72c7c8f74de0446b091b6a0131c102cfd"
+        }
+    }
     $ mt.blocks()
     ['a', 'b', 'c', 'd'] 
     $ mt.hash_function()
