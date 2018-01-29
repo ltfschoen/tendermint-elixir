@@ -60,8 +60,14 @@ defmodule BlockchainTendermint do
       iex> BlockchainTendermint.handle_request("")
       {:ok, true}
   """
-  def handle_request(tx_args) do
-    IO.puts("Processing Transaction")
+  # Default args using \\
+  def handle_request(tx_args \\ "from=a&to=b&to_index=0&proof=''") do
+    # Important Note: Value of `inspect tx_args` is `{:RequestInfo, '0.15.0'}`
+    # Temporarily override value of `tx_args`
+    tx_args =
+      if tx_args === {:RequestInfo, '0.15.0'}, do: "from=a&to=b&to_index=0&proof=''"
+    IO.puts("Elixir ABCI Application Processing Transaction")
+    IO.puts("handle_request Received Arguments: #{inspect tx_args}")
 
     # Send Transaction to Tendermint Node via the `broadcast_tx_commit` Endpoint. 
     # Note: Tendermint Node will run via CheckTx against the Elixir ABCI Application.
@@ -143,7 +149,7 @@ defmodule BlockchainTendermint do
     # FIXME - Should expect "from='a',..."
     # FIXME - Convert Map to Stringified for `proof=#{block_0_merkle_proof}` 
     #         - https://gist.github.com/ltfschoen/749a5c141fa3536a5e678757d0022c7a
-    tx_args_map = String.split("from=a&to=b&to_index=0&proof=''", ~r/&|=/) 
+    tx_args_map = String.split(tx_args, ~r/&|=/)
       |> Enum.chunk(2) 
       |> Map.new(fn [k, v] -> {k, v} end)
 

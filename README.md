@@ -293,6 +293,7 @@ TENDERMINT-ELIXIR
   iex(1)> BlockchainTendermint.start_server
   {:ok, #PID<0.168.0>}
   iex(2)> Processing Transaction
+  Received Arguments to handle_request: "from=a&to=b&to_index=0&proof=''"
   58c89d709329eb37285837b042ab6ff72c7c8f74de0446b091b6a0131c102cfd
   Validity of Transaction: true
 
