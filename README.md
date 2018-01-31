@@ -31,29 +31,16 @@ TENDERMINT-ELIXIR
 * [X] Install Tendermint Core (BFT Consensus) in Go `tendermint --help`
 * [X] Install Tendermint ABCI-CLI `abci-cli --help`
 * [X] Create Boilerplate Elixir Tendermint Application
-* [X] Load [Merkle Tree Elixir Library](https://github.com/yosriady/merkle_tree) with [Mix](https://elixirschool.com/en/lessons/basics/mix/) into Elixir Tendermint Application
+* [X] Load [Merkle Tree Elixir Library](https://github.com/yosriady/merkle_tree) with [Mix](https://elixirschool.com/en/lessons/basics/mix/) into Elixir Tendermint Application. Merke Tree Erlang Library is used perform Merkle Proof Calculations to verify State-Replication https://github.com/yosriady/merkle_tree#usage
 * [X] Load [Tendermint ABCI Server (Erlang)](https://github.com/KrzysiekJ/abci_server) with Mix into Elixir Tendermint Application 
 * [X] Run Elixir Tendermint Application (optionally using Interactive Elixir (IEx))
   * [X] Start the Tendermint ABCI Server (Erlang)
   * [X] Stop the Tendermint ABCI Server (Erlang)
 * [X] Create Shell Script to generate Tendermint Testnet with four (4) Nodes `bash launch_testnet_nodes.sh`
-* [.] Write Elixir Tendermint Application that implements the Tendermint ABCI (Application BlockChain Interface. Handle Byzantine Fault Tolerance (BFT) replication of the following State:
-  * [.] Root Hash `root_hash` is Pre-Agreed at Genesis and is Generated from the Merkle-Hash of an Array of Whitelisted Participants Addresses 
-    * `whitelisted = ["a", "b", "c", "d"]`
-  * [.] Verification of the passing the "Ball" Transaction
-    * [.] Simulate the Act of passing a "Ball" around with a Transaction comprising `from`, `to`, `to_index`, `proof` fields
-    * [.] Verify before passing the "Ball" around using a succinct Merkle Proof Calculation that the Sender of the "Ball" in the `from` field of the Transaction actually held the "Ball" and is a Whitelisted Participants
-    * [.] Verify before passing the "Ball" around using a succinct Merkle Proof Calculation that the Recipient of the "Ball" in the `to` field of the Transaction is actually a Whitelisted Participant
-    * [ ] Verify before passing the "Ball" around using a succinct Merkle Proof Calculation that the Recipient of the "Ball" is at the Address of the `to_index` field of the Transaction and is proven by the `proof` field of the Transaction, which is a List of Hashes
-    * [ ] Verify using a succinct Merkle Proof Calculation that only a Single Whitelisted Participant is holding the "Ball" at a time
-  * [ ] Verify using a succinct Merkle Proof Calculation that the Recipient of the "Ball" is the Whitelisted Participant of the `to` field in the Transaction only after successful Validation of the passing the "Ball" Transaction
-  * [.] Verify that only the Merke Tree Erlang Library is implemented to perform succinct Merkle Proof Calculations to demonstrate State-Replication https://github.com/yosriady/merkle_tree#usage
-    * [.] Verify that State-Replication of the Whitelisted Participant Addressses (`whitelisted`) is only performed on the Merkle Tree `root_hash` and not verbosely
-  * [ ] Write Functions to handle calls for `CheckTx` and `DeliverTx` in Elixir
-  * [ ] Write Stubs for Tendermint Commits, Inits, BeginBlocks, EndBlocks, and Infos if necessary
-  * [ ] Generate Documentation with [ExDoc](https://github.com/elixir-lang/ex_doc) and published on [HexDocs](https://hexdocs.pm)
-  * [ ] Release on Github with ZIP file
-  * [ ] Publish on [Hex](https://hex.pm/docs/publish)
+* [ ] Create Elixir ABCI Application and processes ABCI-CLI (Tendermint Client) and cURL requests to say the `broadcast_tx_commit` endpoint of the Tendermint ABCI (Tendermint's server-side Application BlockChain Interface API) that uses the Tendermint Core, which is a Byzantine Fault Tolerance (BFT) Blockchain Engine Middlware that processes a State Transition machine input from any language (i.e. Elixir) and replicates it on many Tendermint Testnet Nodes as output. Successful transactions are included in the Mempool, broadcast to Peers, and eventually committed in a Block with the return value containing `check_tx` and `deliver_tx` properties (each containing `data` and `log` sub-properties) to signify that the transaction was run through the CheckTx and DeliverTx ABCI messages of the TMSP (Simple Messaging Protocol)
+* [ ] Implement the Merkle Tree Elixir Library example code https://github.com/yosriady/merkle_tree#usage 
+* [ ] Generate Documentation with [ExDoc](https://github.com/elixir-lang/ex_doc) and published on [HexDocs](https://hexdocs.pm)
+* [ ] Publish on [Hex](https://hex.pm/docs/publish)
 
 # Installation (of Elixir and Tendermint)<a id="chapter-2"></a>
 
@@ -285,7 +272,7 @@ TENDERMINT-ELIXIR
 
 * Send cURL Request to ABCI Server endpoint.
   ```
-  curl -s 'localhost:46658/broadcast_tx_commit?tx="from=___&to=___&to_index=___&proof=___"'
+  curl -s 'localhost:46658/broadcast_tx_commit?tx="sender=___&receiver=___&data=___"'
   ```
 
 * View Logs from ABCI Server in IEx Terminal Window. Shows Outputs of `handle_request` function in Elixir ABCI App
@@ -293,7 +280,7 @@ TENDERMINT-ELIXIR
   iex(1)> BlockchainTendermint.start_server
   {:ok, #PID<0.168.0>}
   iex(2)> Processing Transaction
-  Received Arguments to handle_request: "from=a&to=b&to_index=0&proof=''"
+  Received Arguments to handle_request: "sender=a&receiver=b&data=''"
   58c89d709329eb37285837b042ab6ff72c7c8f74de0446b091b6a0131c102cfd
   Validity of Transaction: true
 
@@ -799,7 +786,7 @@ https://tendermint.readthedocs.io/en/master/how-to-read-logs.html
                       * After `timeoutProposer` -> Step 2
                       * After `PoLC Round` receipt of Proposal Block and all Prevotes -> Step 2
                       * After "Common Exit Conditions"
-                        * QUESTION - HOW? ALL THE COMMON EXIT CONDITIONS ARE POST- STEP 1
+                        * Question Raised - How does this make sense when all the common exit conditions occur after "Step 1"
                           * https://matrix.to/#/!vIMgGaMqkLIWPCZvPF:matrix.org/$15167017365754249pwRYF:matrix.org
                   * Step 2: `Prevote (H, R)`
                     * Start:
@@ -939,11 +926,8 @@ https://tendermint.readthedocs.io/en/master/how-to-read-logs.html
 
             * TODO
               * Proof of Fork Accountability - https://github.com/tendermint/tendermint/wiki/Byzantine-Consensus-Algorithm#proof-of-fork-accountability
-              
               * Alternative Algorithm - https://github.com/tendermint/tendermint/wiki/Byzantine-Consensus-Algorithm#alternative-algorithm
-            
               * Censorship Attacks - https://github.com/tendermint/tendermint/wiki/Byzantine-Consensus-Algorithm#censorship-attacks
-              
               * Overcoming Forks and Censorship Attacks - https://github.com/tendermint/tendermint/wiki/Byzantine-Consensus-Algorithm#overcoming-forks-and-censorship-attacks
 
     * Benefits:
@@ -996,20 +980,19 @@ https://tendermint.readthedocs.io/en/master/how-to-read-logs.html
 # References <a id="chapter-14"></a>
 
 * Tendermint
-  * TODO
-    * TODO - TendermintCore Wiki - https://github.com/tendermint/tendermint/wiki/
-    * TODO - Application Developers Guide - https://github.com/tendermint/tendermint/wiki/Application-Developers
-    * TODO - Byzantine Consensus Algorithm - https://github.com/tendermint/tendermint/wiki/Byzantine-Consensus-Algorithm
-    * TODO - Tendermint Documentation - https://tendermint.readthedocs.io/en/master/getting-started.html
-    * TODO - Tendermint Documentation Release - https://media.readthedocs.org/pdf/tendermint/master/tendermint.pdf
-    * TODO - Tendermine: BFT in the Age of Blockchains - https://allquantor.at/blockchainbib/pdf/buchman2016tendermint.pdf
-    * TODO - Cosmos usage of Tendermint
-      * https://cosmos.network/about/whitepaper
-      * https://cosmos.network/about/faq
-    * TODO - Merkle Tree Proof Calculation and Checking - https://github.com/yosriady/merkle_tree
+  * TendermintCore Wiki - https://github.com/tendermint/tendermint/wiki/
+  * Application Developers Guide - https://github.com/tendermint/tendermint/wiki/Application-Developers
+  * Byzantine Consensus Algorithm - https://github.com/tendermint/tendermint/wiki/Byzantine-Consensus-Algorithm
+  * Tendermint Documentation - https://tendermint.readthedocs.io/en/master/getting-started.html
+  * Tendermint Documentation Release - https://media.readthedocs.org/pdf/tendermint/master/tendermint.pdf
+  * Tendermine: BFT in the Age of Blockchains - https://allquantor.at/blockchainbib/pdf/buchman2016tendermint.pdf
+  * Cosmos usage of Tendermint
+    * https://cosmos.network/about/whitepaper
+    * https://cosmos.network/about/faq
+  * Merkle Tree Proof Calculation and Checking - https://github.com/yosriady/merkle_tree
 
 * Erlang 
-  * TODO - Erlang Standard Library - http://erlang.org/doc/apps/stdlib/index.html
+  * Erlang Standard Library - http://erlang.org/doc/apps/stdlib/index.html
 
 # Unsorted Notes <a id="chapter-15"></a>
 

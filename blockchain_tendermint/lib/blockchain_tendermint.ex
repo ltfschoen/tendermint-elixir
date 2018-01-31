@@ -22,7 +22,8 @@ defmodule BlockchainTendermint do
   end
 
   @doc """
-  Starts the ABCI Server (Erlang) on given Port and delegates calls to Foo module
+  Starts the ABCI Server (Erlang) on given Port and delegates calls to BlockchainTendermint module
+  that has not yet been implemented
 
     References: 
     - https://github.com/KrzysiekJ/abci_server/blob/master/doc/overview.edoc
@@ -61,13 +62,14 @@ defmodule BlockchainTendermint do
       {:ok, true}
   """
   # Default args using \\
-  def handle_request(tx_args \\ "from=a&to=b&to_index=0&proof=''") do
+  def handle_request(tx_args \\ "sender=a&receiver=b&data=''") do
     # Important Note: Value of `inspect tx_args` is `{:RequestInfo, '0.15.0'}`
-    # Temporarily override value of `tx_args`
-    tx_args =
-      if tx_args === {:RequestInfo, '0.15.0'}, do: "from=a&to=b&to_index=0&proof=''"
-    IO.puts("Elixir ABCI Application Processing Transaction")
+    # Temporarily override value of `tx_args` for demonstration purposes only
     IO.puts("handle_request Received Arguments: #{inspect tx_args}")
+    tx_args =
+      if tx_args === {:RequestInfo, '0.15.0'} || "", do: "sender=a&receiver=b&data=''"
+    IO.puts("Elixir ABCI Application Simulation")
+    IO.puts("handle_request Override Arguments: #{inspect tx_args}")
 
     # Send Transaction to Tendermint Node via the `broadcast_tx_commit` Endpoint. 
     # Note: Tendermint Node will run via CheckTx against the Elixir ABCI Application.
@@ -78,10 +80,10 @@ defmodule BlockchainTendermint do
     #       The return value includes `check_tx` and `deliver_tx`, which is result of running the 
     #       transaction through those ABCI messages
     # - Option 1 (Preferred) - Use cURL to send ABCI requests from the CLI
-    #   i.e. curl -s 'localhost:46658/broadcast_tx_commit?tx="from=___&to=___&to_index=___&proof=___"'
+    #   i.e. curl -s 'localhost:46658/broadcast_tx_commit?tx="sender=a&receiver=b&data=''"'
     # - Option 2 - Use ABCI-CLI to send ABCI requests from the CLI
     #
-    # Note: Transaction with bytes "from=___&to=___&to_index=___&proof=___" are stored as Key and 
+    # Note: Transaction with bytes "sender=a&receiver=b&data=''" are stored as Key and 
     #       Value in Merkle Tree
 
     # Reference: 
@@ -108,11 +110,8 @@ defmodule BlockchainTendermint do
     #   }
     # }
 
-    # Destructure Transaction Key/Value pairs from tx_args "from=___&to=___&to_index=___&proof=___"
-
-    # Simulate Generation of the Genesis Block whose Root Hash `root_hash` (32 Bytes) is:
-    # - Pre-Agreed at Genesis
-    # - Initial Data Blocks are the Array of Whitelisted Participant Addresses
+    # Simulate Generation of the Genesis Block with Root Hash `root_hash`:
+    # - Initial Data Blocks are assigned an Array
     # - Generate Merkle Tree by:
     #   - Creating a Leaf Nodes from Merkle-Hashing (with the Merkle Tree's hash_function) each Data Block
     #   - Recursively Build each Parent Node Hash from Hashing the Concatenation of their immediate 
@@ -122,14 +121,14 @@ defmodule BlockchainTendermint do
     #   - Verify that Transaction from only the Block Headers and Merkle Tree Root Hash
     # - Reference: https://yos.io/2016/05/19/merkle-trees-in-elixir/
 
-    # Data Blocks
-    whitelisted_participants = ["a", "b", "c", "d"]
+    # Initial Data Blocks
+    my_merkle_tree = ["a", "b", "c", "d"]
     # Genesis Block Header - https://github.com/tendermint/tendermint/wiki/Block-Structure#header
-    block_0_merkle_tree = MerkleTree.new whitelisted_participants
+    block_0_merkle_tree = MerkleTree.new my_merkle_tree
     block_0_merkle_tree_root = block_0_merkle_tree.root()
     # Genesis Block Merkle Tree Root Hash (LastBlockHash)
     block_0_merkle_tree_root_hash = block_0_merkle_tree_root.value
-    IO.puts block_0_merkle_tree_root_hash
+    IO.puts ("Genesis Block Merkle Tree Root Hash (LastBlockHash): #{block_0_merkle_tree_root_hash}")
 
     # Genesis Block Merkle Proof
     # - Reference: https://blog.ethereum.org/2015/11/15/merkling-in-ethereum/
@@ -144,20 +143,20 @@ defmodule BlockchainTendermint do
       block_0_merkle_proof_chunk_path_branch_3
     ]
 
-    # Simulate Receipt of Transaction: "from=___&to=___&to_index=___&proof=___"
+    # Simulate Receipt of Transaction: "sender=a&receiver=b&data=''"
     # - Convert Query String Parameters into Key/Value Pairs
-    # FIXME - Should expect "from='a',..."
+    # FIXME - Should expect "sender='a',..."
     # FIXME - Convert Map to Stringified for `proof=#{block_0_merkle_proof}` 
     #         - https://gist.github.com/ltfschoen/749a5c141fa3536a5e678757d0022c7a
     tx_args_map = String.split(tx_args, ~r/&|=/)
       |> Enum.chunk(2) 
       |> Map.new(fn [k, v] -> {k, v} end)
 
-    # Verify using a succinct Merkle Proof Calculation that the Sender in the `from` field of the 
-    # Transaction is a Whitelisted Participants. Note: Non-Validators have `seed: ""` in genesis.json
+    # Verify using a Merkle Proof Calculation that the Sender in the `sender` field of the 
+    # Transaction was in the Initial Data Blocks. Note: Non-Validators have `seed: ""` in genesis.json
     proven_from_sender_field = Enum.any?(block_0_merkle_proof, fn(block_0_merkle_proof_chunk_path_branch) -> 
       MerkleTree.Proof.proven?(
-        {tx_args_map["from"], 0}, # If `from=a` then use 0, else if `from=b` then use 1, etc
+        {tx_args_map["sender"], 0}, # If `sender=a` then use 0, else if `sender=b` then use 1, etc
         block_0_merkle_tree_root_hash, 
         block_0_merkle_proof_chunk_path_branch
       )
@@ -172,10 +171,10 @@ defmodule BlockchainTendermint do
     # )
 
     # Verify using a succinct Merkle Proof Calculation that the Recipient in the `to` field of the 
-    # Transaction is a Whitelisted Participants.
+    # Transaction was from the Initial Data Blocks.
     proven_to_recipient_field = Enum.any?(block_0_merkle_proof, fn(block_0_merkle_proof_chunk_path_branch) -> 
       MerkleTree.Proof.proven?(
-        {tx_args_map["to"], 1}, # If `from=a` then use 0, else if `from=b` then use 1, etc
+        {tx_args_map["receiver"], 1}, # If `from=a` then use 0, else if `from=b` then use 1, etc
         block_0_merkle_tree_root_hash, 
         block_0_merkle_proof_chunk_path_branch
       )
